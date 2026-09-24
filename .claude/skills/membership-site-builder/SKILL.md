@@ -24,8 +24,10 @@ Playbook สำหรับทำเว็บคอร์สเรียน / �
 | โฮสต์ | Vercel (ผูก GitHub → push main = deploy production) | ทุก PR ที่ merge ขึ้นเว็บอัตโนมัติ |
 | โดเมน | GoDaddy (หรือที่ไหนก็ได้) → DNS ชี้ Vercel | |
 | อีเมล | Brevo SMTP ผ่าน Supabase Auth (+ Brevo API สำหรับ Admin ส่งประกาศ) | ฟรี 300 ฉบับ/วัน |
-| วิดีโอ | Google Drive embed (เริ่มง่าย) → แนะนำ Bunny Stream ถ้าต้องกันลิงก์หลุด | Drive ป้องกันลิงก์ไม่ได้จริง |
+| วิดีโอ | **YouTube Unlisted** + เครื่องเล่นคุมเอง (IFrame API, ชั้นบัง) · Drive ยังรองรับ · Bunny Stream ถ้าต้องกันลิงก์หลุดจริง | Private ฝังไม่ได้ · Drive ติดลิมิตคนดูไม่ล็อกอิน |
 | ชำระเงิน | โอน + แนบสลิป → Admin อนุมัติ | ไม่ต้องมี payment gateway |
+| แจ้งเตือนเจ้าของ | Discord Webhook (`src/lib/discord.ts`) + 🔔 ในเว็บ + badge สีส้มในเมนู Admin | เจ้าของรู้ทันทีโดยไม่ต้องล็อกอิน |
+| งานประจำวัน / สำรองข้อมูล | Vercel Cron → `/api/cron/daily` (+ `CRON_SECRET`) · backup JSON.gz → Discord | Hobby ทำ cron ได้วันละครั้ง · Supabase Free ไม่มี backup |
 
 ## ลำดับงาน (ทำตามนี้ แล้วติ๊กทีละข้อ)
 
@@ -73,6 +75,11 @@ Supabase SMTP → Brevo; ต้องปิด Authorized IPs ของ SMTP key
 - **ตรวจจาก log ก่อนเดา** — ปัญหาอีเมล/สมัครไม่ได้ ดู `query_logs` source `auth_logs` ก่อนเสมอ (เคยเจอ `525 Unauthorized IP address` จาก Brevo)
 - เมื่อข้อความผู้ใช้กำกวม (เช่น "จัดไป") ให้ทำตามที่เสนอล่าสุดและบอกให้ชัดว่าตีความว่าอะไร
 - ห้ามลบข้อมูลจริง (คลาส/สมาชิก) ถ้ามีการซื้อหรือวิดีโอผูกอยู่ — เช็กก่อนด้วย `not exists`
+
+## ฟีเจอร์ชุดหลังที่เพิ่ม (THUS) — ดูแผนที่ไฟล์ใน `references/features.md`
+- กันลิงก์วิดีโอหลุด (ส่งทีละบท + column grant + rate limit + log) · คอมเมนต์/ไลก์ใต้คลิป · ถามผู้สอน
+- รหัสสมาชิก/ชื่อเล่น · เลือกผู้รับอีเมล · หน้า Usage & ค่าใช้จ่าย · Discord alerts · cron · backup
+- ทุกครั้งที่เพิ่มฟีเจอร์ที่ "สำคัญ" ให้ถามว่าควรแจ้ง Discord ไหม (`notifyDiscord(kind, title, fields, path)`)
 
 ## ข้อผิดพลาดที่เคยเจอ (อย่าพลาดซ้ำ)
 ดู `references/gotchas.md` — อ่านก่อนแตะ Vercel/Supabase/DNS/อีเมล/การตัดบรรทัดภาษาไทย

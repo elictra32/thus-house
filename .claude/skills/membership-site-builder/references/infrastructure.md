@@ -45,7 +45,8 @@ end $$;
 - MCP บางคำสั่งที่ใส่ `teamId` คืน 403 → **ลองเรียกแบบไม่ใส่ teamId** (`get_project`, `create_project`, `create_project_env`, `create_deployment`) ใช้ได้
 - `create_git_project` ใช้ไม่ได้ (403) → ใช้ `create_project` พร้อม `gitRepository: {type:"github", repo:"owner/repo"}` + `framework: "nextjs"`
 - ถ้ามี project เก่าที่ผูก repo อื่น อย่าไปแตะ — สร้างใหม่
-- env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (เจ้าของใส่เอง), `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_ADMIN_EMAILS`, (`NEXT_PUBLIC_BANK_*`, `BREVO_*` ไม่บังคับ)
+- env: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (เจ้าของใส่เอง), `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_ADMIN_EMAILS`, (`NEXT_PUBLIC_BANK_*`, `BREVO_API_KEY`, `BREVO_SENDER_EMAIL`, `DISCORD_WEBHOOK_URL`, `DISCORD_BACKUP_WEBHOOK_URL`, `CRON_SECRET`, `SUPABASE_PLAN`, `VERCEL_PLAN` ไม่บังคับ)
+- ค่าแบบ **Shared** (team) ต้องผูก Link to Projects และ MCP `filter_project_envs` มองไม่เห็น — ทดสอบจากผลจริงแทน
 - แก้ env แล้วต้อง redeploy: `create_deployment` ด้วย `deploymentId` ของตัวล่าสุด + `target: "production"`
 - Hobby plan build ทีละตัว → deploy ติดคิว `QUEUED` เป็นเรื่องปกติ
 - เช็กสถานะ: `list_deployments` (projectId, target production) → `READY`
