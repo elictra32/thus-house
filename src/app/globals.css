@@ -27,7 +27,8 @@
 }
 
 @layer components {
-  .card { @apply rounded-2xl border border-line bg-card; }
+  /* การ์ดแบบ Soft Glass — มุมโค้งมน ไม่มีเส้นขอบแข็ง ใช้เงาฟุ้ง + พื้นไล่สีจาง */
+  .card { @apply rounded-3xl bg-card bg-gradient-to-b from-white/[.07] to-white/[.015] shadow-[0_24px_60px_-36px_rgba(0,0,0,0.85)] ring-1 ring-inset ring-white/[0.07]; }
   .kicker { @apply text-[13px] font-extrabold uppercase tracking-[2px] text-brand-light; }
   .label { @apply mb-1.5 block text-sm text-muted; }
   .th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted; }
