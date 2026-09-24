@@ -29,6 +29,23 @@ export function driveEmbedUrl(url: string) {
   return m ? `https://drive.google.com/file/d/${m[1]}/preview` : url;
 }
 
+// ดึง video id จากลิงก์ YouTube ทุกรูปแบบ (watch?v= / youtu.be / embed / shorts / live) — ไม่ใช่ YouTube คืน null
+export function youtubeId(url: string): string | null {
+  let u: URL;
+  try {
+    u = new URL(url.trim());
+  } catch {
+    return null;
+  }
+  const host = u.hostname.replace(/^(www|m|music)\./, "");
+  let id: string | null = null;
+  if (host === "youtu.be") id = u.pathname.slice(1).split("/")[0];
+  else if (host === "youtube.com" || host === "youtube-nocookie.com") {
+    id = u.searchParams.get("v") ?? u.pathname.match(/^\/(?:embed|shorts|live|v)\/([^/?#]+)/)?.[1] ?? null;
+  }
+  return id && /^[\w-]{11}$/.test(id) ? id : null;
+}
+
 export const BANK = {
   name: process.env.NEXT_PUBLIC_BANK_NAME ?? "ธนาคารไทยพาณิชย์",
   account: process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "415-188810-1",

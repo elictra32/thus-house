@@ -1,13 +1,16 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api-client";
-import { driveEmbedUrl, formatDuration } from "@/lib/utils";
+import { driveEmbedUrl, formatDuration, youtubeId } from "@/lib/utils";
+import YouTubeLesson from "./YouTubeLesson";
 import type { Video } from "@/types/database";
 
 const THRESHOLD = 0.8;
 
-// Google Drive player เป็น iframe ข้ามโดเมน อ่านเวลาเล่นจริงหรือรู้ว่ากดหยุดไม่ได้
-// จึงนับเวลาที่เปิดบทเรียนนี้ค้างไว้ (เฉพาะตอนแท็บ/หน้าต่างนี้ใช้งานอยู่) แล้ว mark ว่าดูแล้วเมื่อถึง 80% ของความยาววิดีโอ
+// YouTube (Unlisted): ใช้ปุ่มควบคุมของเว็บเอง นับเวลาเฉพาะตอนวิดีโอกำลังเล่นจริง
+// Google Drive: iframe ข้ามโดเมน อ่านเวลาเล่นจริงหรือรู้ว่ากดหยุดไม่ได้
+// จึงนับเวลาที่เปิดบทเรียนนี้ค้างไว้ (เฉพาะตอนแท็บ/หน้าต่างนี้ใช้งานอยู่)
+// ทั้งสองแบบ mark ว่าดูแล้วเมื่อถึง 80% ของความยาววิดีโอ
 export default function VideoPlayer({
   video,
   watched,
@@ -24,6 +27,8 @@ export default function VideoPlayer({
   const frameRef = useRef<HTMLDivElement>(null);
   const marked = useRef(watched);
   const target = Math.max(1, Math.floor(video.duration_seconds * THRESHOLD));
+  const ytId = youtubeId(video.video_url);
+  const [isNativeFull, setIsNativeFull] = useState(false);
 
   async function markWatched() {
     if (marked.current) return;
@@ -40,18 +45,30 @@ export default function VideoPlayer({
   }
 
   useEffect(() => {
-    if (watched || !video.duration_seconds) return;
+    if (ytId || watched || !video.duration_seconds) return;
     const t = setInterval(() => {
       // hasFocus() ยังเป็น true เมื่อโฟกัสอยู่ใน iframe วิดีโอ แต่เป็น false เมื่อสลับไปแอป/หน้าต่างอื่น
       if (document.visibilityState === "visible" && document.hasFocus()) setElapsed((s) => s + 1);
     }, 1000);
     return () => clearInterval(t);
-  }, [watched, video.duration_seconds]);
+  }, [ytId, watched, video.duration_seconds]);
 
   useEffect(() => {
     if (!watched && video.duration_seconds && elapsed >= target) markWatched();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elapsed]);
+
+  useEffect(() => {
+    const onChange = () => setIsNativeFull(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (pseudoFull) setPseudoFull(false);
+    else if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else enterFullscreen();
+  }
 
   // เต็มจอ: ใช้ Fullscreen API ถ้าเบราว์เซอร์รองรับ (Android / คอม) และพยายามหมุนเป็นแนวนอน
   // ไม่รองรับ (iPhone) → ขยายกรอบทับทั้งหน้าจอแทน · ไม่ถอด iframe ออก วิดีโอจึงเล่นต่อไม่เริ่มใหม่
@@ -94,16 +111,28 @@ export default function VideoPlayer({
             : "relative aspect-video overflow-hidden rounded-[14px] bg-gradient-to-br from-[#3a2449] to-[#1d1624] [&:fullscreen]:rounded-none [&:fullscreen]:bg-black"
         }
       >
-        <iframe
-          src={driveEmbedUrl(video.video_url)}
-          title={video.title}
-          className="absolute inset-0 h-full w-full"
-          allow="autoplay; fullscreen"
-          allowFullScreen
-        />
-        {/* บังปุ่ม "เปิดในหน้าต่างใหม่" มุมขวาบนของ Drive ไม่ให้กดออกไปที่ลิงก์ Drive ตรงๆ */}
-        <div className="absolute right-0 top-0 z-10 h-16 w-16" onContextMenu={(e) => e.preventDefault()} aria-hidden />
-        {pseudoFull && (
+        {ytId ? (
+          <YouTubeLesson
+            key={ytId}
+            videoId={ytId}
+            isFull={pseudoFull || isNativeFull}
+            onToggleFullscreen={toggleFullscreen}
+            onPlayingSecond={() => !watched && video.duration_seconds && setElapsed((s) => s + 1)}
+          />
+        ) : (
+          <>
+            <iframe
+              src={driveEmbedUrl(video.video_url)}
+              title={video.title}
+              className="absolute inset-0 h-full w-full"
+              allow="autoplay; fullscreen"
+              allowFullScreen
+            />
+            {/* บังปุ่ม "เปิดในหน้าต่างใหม่" มุมขวาบนของ Drive ไม่ให้กดออกไปที่ลิงก์ Drive ตรงๆ */}
+            <div className="absolute right-0 top-0 z-10 h-16 w-16" onContextMenu={(e) => e.preventDefault()} aria-hidden />
+          </>
+        )}
+        {pseudoFull && !ytId && (
           <button
             onClick={() => setPseudoFull(false)}
             aria-label="ออกจากโหมดเต็มจอ"
@@ -121,7 +150,7 @@ export default function VideoPlayer({
           <span>
             {watched
               ? "✓ ดูบทนี้แล้ว"
-              : `เวลาที่เปิดบทเรียน ${formatDuration(Math.min(elapsed, video.duration_seconds))} / ${formatDuration(video.duration_seconds)}`}
+              : `${ytId ? "เวลาที่ดูแล้ว" : "เวลาที่เปิดบทเรียน"} ${formatDuration(Math.min(elapsed, video.duration_seconds))} / ${formatDuration(video.duration_seconds)}`}
           </span>
           <div className="flex items-center gap-4">
             {!watched && (
