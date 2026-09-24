@@ -9,6 +9,7 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   const isForm = body instanceof FormData;
   const res = await fetch(url, {
     method,
+    cache: "no-store", // ข้อมูลสด (คอมเมนต์/ไลก์/สถานะ) — ห้ามใช้ของที่เบราว์เซอร์แคชไว้
     headers: body && !isForm ? { "Content-Type": "application/json" } : undefined,
     body: body ? (isForm ? body : JSON.stringify(body)) : undefined,
   });
