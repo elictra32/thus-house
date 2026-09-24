@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { requireApiUser, jsonError } from "@/lib/auth";
 import { createServiceSupabase } from "@/lib/supabase-server";
 
-// แก้ไขโปรไฟล์ตัวเอง — อนุญาตเฉพาะ name และ phone
+// แก้ไขโปรไฟล์ตัวเอง — อนุญาตเฉพาะ name, nickname และ phone (รหัสสมาชิก Admin เป็นคนกำหนด)
 export async function PUT(req: Request) {
   const auth = await requireApiUser();
   if (!auth.ok) return auth.res;
@@ -14,6 +14,12 @@ export async function PUT(req: Request) {
     if (!name) return jsonError("กรุณากรอกชื่อ");
     if (name.length > 100) return jsonError("ชื่อยาวเกินไป");
     update.name = name;
+  }
+  if ("nickname" in body) {
+    const nickname = String(body.nickname ?? "").trim();
+    if (!nickname) return jsonError("กรุณากรอกชื่อเล่น");
+    if (nickname.length > 50) return jsonError("ชื่อเล่นยาวเกินไป");
+    update.nickname = nickname;
   }
   if ("phone" in body) {
     const phone = String(body.phone ?? "").trim();

@@ -17,6 +17,9 @@ create table if not exists public.users (
 alter table public.users add column if not exists membership_start timestamptz;
 alter table public.users add column if not exists membership_end timestamptz;
 alter table public.users add column if not exists last_login_at timestamptz;
+alter table public.users add column if not exists nickname text;       -- ชื่อเล่น (บังคับกรอกตอนสมัคร)
+alter table public.users add column if not exists member_code text;    -- รหัสสมาชิก (Admin กำหนด)
+create unique index if not exists users_member_code_key on public.users (lower(member_code)) where member_code is not null;
 
 create table if not exists public.classes (
   id uuid primary key default gen_random_uuid(),
@@ -154,8 +157,8 @@ create index if not exists users_role_idx on public.users(role);
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.users (id, email, name, phone)
-  values (new.id, new.email, new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'phone')
+  insert into public.users (id, email, name, phone, nickname)
+  values (new.id, new.email, new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'phone', new.raw_user_meta_data->>'nickname')
   on conflict (id) do nothing;
   return new;
 end $$;

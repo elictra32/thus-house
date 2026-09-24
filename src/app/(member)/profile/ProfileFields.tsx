@@ -5,7 +5,7 @@ import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { api } from "@/lib/api-client";
 
-function EditableRow({ label, field, value }: { label: string; field: "name" | "phone"; value: string }) {
+function EditableRow({ label, field, value }: { label: string; field: "name" | "nickname" | "phone"; value: string }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -27,7 +27,7 @@ function EditableRow({ label, field, value }: { label: string; field: "name" | "
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-4 first:border-t-0">
+    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
       <div className="min-w-0 flex-1">
         <p className="text-xs text-muted">{label}</p>
         {editing ? (
@@ -48,11 +48,30 @@ function EditableRow({ label, field, value }: { label: string; field: "name" | "
   );
 }
 
-export default function ProfileFields({ name, phone, email }: { name: string; phone: string; email: string }) {
+export default function ProfileFields({
+  name,
+  nickname,
+  phone,
+  email,
+  memberCode,
+}: {
+  name: string;
+  nickname: string;
+  phone: string;
+  email: string;
+  memberCode: string;
+}) {
   return (
-    <section className="card">
-      <EditableRow label="ชื่อ" field="name" value={name} />
-      <div className="border-t border-line px-5 py-4">
+    <section className="card divide-y divide-line">
+      {memberCode && (
+        <div className="px-5 py-4">
+          <p className="text-xs text-muted">รหัสสมาชิก</p>
+          <p className="mt-0.5 font-bold tracking-wide text-brand-light">{memberCode}</p>
+        </div>
+      )}
+      <EditableRow label="ชื่อ–นามสกุล" field="name" value={name} />
+      <EditableRow label="ชื่อเล่น" field="nickname" value={nickname} />
+      <div className="px-5 py-4">
         <p className="text-xs text-muted">อีเมล</p>
         <p className="mt-0.5">{email}</p>
       </div>

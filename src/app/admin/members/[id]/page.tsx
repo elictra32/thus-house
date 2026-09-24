@@ -87,7 +87,15 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
 
       <div className="grid gap-6 lg:grid-cols-[320px_1fr]">
         <div className="card h-fit space-y-4 p-5 text-sm">
+          <FieldEditor
+            label="รหัสสมาชิก"
+            value={user.member_code ?? ""}
+            placeholder="เช่น THUS-001"
+            disabled={data.isOwner}
+            onSave={(v) => update({ member_code: v })}
+          />
           <Row label="ชื่อ" value={user.name || "-"} />
+          <FieldEditor label="ชื่อเล่น" value={user.nickname ?? ""} disabled={data.isOwner} onSave={(v) => update({ nickname: v })} />
           <Row label="อีเมล" value={user.email} />
           <div>
             <p className="text-xs text-muted">การยืนยันอีเมล</p>
@@ -192,6 +200,58 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
         confirmLabel="ลบถาวร"
       />
     </>
+  );
+}
+
+// แก้ค่าช่องเดียวในหน้ารายละเอียดสมาชิก (รหัสสมาชิก / ชื่อเล่น)
+function FieldEditor({
+  label,
+  value,
+  placeholder,
+  disabled,
+  onSave,
+}: {
+  label: string;
+  value: string;
+  placeholder?: string;
+  disabled?: boolean;
+  onSave: (v: string) => Promise<void>;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [saving, setSaving] = useState(false);
+  const dirty = draft.trim() !== value;
+  return (
+    <div>
+      <p className="text-xs text-muted">{label}</p>
+      {disabled ? (
+        <p>{value || "-"}</p>
+      ) : (
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            value={draft}
+            placeholder={placeholder}
+            onChange={(e) => setDraft(e.target.value)}
+            className="w-full min-w-0 rounded-lg border border-edge bg-raised px-2.5 py-1.5 text-sm outline-none focus:border-brand"
+          />
+          {dirty && (
+            <Button
+              size="sm"
+              loading={saving}
+              onClick={async () => {
+                setSaving(true);
+                try {
+                  await onSave(draft.trim());
+                } finally {
+                  setSaving(false);
+                }
+              }}
+            >
+              บันทึก
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

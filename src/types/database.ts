@@ -7,6 +7,8 @@ export interface User {
   email: string;
   name: string | null;
   phone: string | null;
+  nickname: string | null;
+  member_code: string | null; // รหัสสมาชิก (Admin กำหนด)
   status: UserStatus;
   membership_start: string | null;
   membership_end: string | null;

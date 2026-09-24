@@ -44,7 +44,7 @@ export default async function Dashboard() {
 
   const mine = all.filter((c) => approved.has(c.id));
   const available = all.filter((c) => !approved.has(c.id));
-  const name = profile?.name || user.email?.split("@")[0];
+  const name = profile?.nickname || profile?.name || user.email?.split("@")[0];
 
   return (
     <div className="space-y-14">

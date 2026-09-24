@@ -26,7 +26,13 @@ export default async function ProfilePage() {
         <LogoutButton />
       </div>
 
-      <ProfileFields name={profile?.name ?? ""} phone={profile?.phone ?? ""} email={user.email ?? ""} />
+      <ProfileFields
+        name={profile?.name ?? ""}
+        nickname={profile?.nickname ?? ""}
+        phone={profile?.phone ?? ""}
+        email={user.email ?? ""}
+        memberCode={profile?.member_code ?? ""}
+      />
 
       <section className="card overflow-hidden">
         <h2 className="p-5 text-lg font-bold">ประวัติการสั่งซื้อ</h2>

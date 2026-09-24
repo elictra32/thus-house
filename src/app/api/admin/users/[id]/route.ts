@@ -52,6 +52,15 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
   if (status) update.status = status;
   if ("name" in body) update.name = str(body, "name", { max: 100 });
   if ("phone" in body) update.phone = str(body, "phone", { max: 20 });
+  if ("nickname" in body) update.nickname = str(body, "nickname", { max: 50 });
+  if ("member_code" in body) {
+    const code = str(body, "member_code", { max: 30 });
+    if (code) {
+      const { data: taken } = await service.from("users").select("id").ilike("member_code", code.replace(/[%_\\]/g, "\\$&")).neq("id", id).maybeSingle();
+      if (taken) return jsonError(`รหัสสมาชิก ${code} ถูกใช้แล้ว`);
+    }
+    update.member_code = code;
+  }
   if ("membership_end" in body) update.membership_end = str(body, "membership_end");
   if ("role" in body) {
     if (!perms.has("roles")) return jsonError("ไม่มีสิทธิ์เปลี่ยน Role", 403);
