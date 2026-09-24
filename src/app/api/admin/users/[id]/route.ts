@@ -2,12 +2,25 @@ import { adminRoute, check, ok, readJson, must } from "@/lib/admin-route";
 import { jsonError, logAdmin } from "@/lib/auth";
 import { oneOf, str } from "@/lib/validate";
 import { unconfirmedUserIds } from "@/lib/email-confirm";
+import { isAdminEmail } from "@/lib/admin";
+import type { Permission } from "@/lib/permissions";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 type P = { id: string };
 
-export const GET = adminRoute<P>(async (_req, { service }, { id }) => {
+// บัญชีที่มีสิทธิ์จัดการ Role (Head Admin / เจ้าของระบบ) — คนที่ไม่มีสิทธิ์ roles แก้หรือลบไม่ได้
+async function guardTarget(service: SupabaseClient, id: string, perms: Set<Permission>) {
+  const { data: target } = await service.from("users").select("email, roles(permissions)").eq("id", id).maybeSingle();
+  if (!target) return { target: null, error: null };
+  if (isAdminEmail(target.email)) return { target, error: jsonError("บัญชีเจ้าของระบบแก้ไขหรือลบจากหน้านี้ไม่ได้", 403) };
+  const privileged = ((target.roles as unknown as { permissions: string[] } | null)?.permissions ?? []).includes("roles");
+  if (privileged && !perms.has("roles")) return { target, error: jsonError("ไม่มีสิทธิ์แก้ไขบัญชี Head Admin", 403) };
+  return { target, error: null };
+}
+
+export const GET = adminRoute<P>("members", async (_req, { service }, { id }) => {
   const [user, purchases, watched] = await Promise.all([
-    service.from("users").select("*").eq("id", id).maybeSingle(),
+    service.from("users").select("*, roles(name)").eq("id", id).maybeSingle(),
     service.from("purchases").select("*, classes(id, name, videos_count)").eq("user_id", id).order("created_at", { ascending: false }),
     service.from("watched_videos").select("video_id, videos(class_id)").eq("user_id", id),
   ]);
@@ -19,10 +32,16 @@ export const GET = adminRoute<P>(async (_req, { service }, { id }) => {
     if (cid) watchedByClass[cid] = (watchedByClass[cid] ?? 0) + 1;
   }
   const emailConfirmed = !(await unconfirmedUserIds(service)).has(id);
-  return ok({ user: user.data, purchases: check(purchases), watchedByClass, emailConfirmed });
+  return ok({
+    user: user.data,
+    purchases: check(purchases),
+    watchedByClass,
+    emailConfirmed,
+    isOwner: isAdminEmail(user.data.email),
+  });
 });
 
-export const PUT = adminRoute<P>(async (req, { service, email }, { id }) => {
+export const PUT = adminRoute<P>("members", async (req, { service, email, user: me, perms }, { id }) => {
   const body = await readJson(req);
   const update: Record<string, unknown> = {};
   const status = oneOf(body, "status", ["active", "inactive", "suspended"] as const);
@@ -30,16 +49,27 @@ export const PUT = adminRoute<P>(async (req, { service, email }, { id }) => {
   if ("name" in body) update.name = str(body, "name", { max: 100 });
   if ("phone" in body) update.phone = str(body, "phone", { max: 20 });
   if ("membership_end" in body) update.membership_end = str(body, "membership_end");
+  if ("role" in body) {
+    if (!perms.has("roles")) return jsonError("ไม่มีสิทธิ์เปลี่ยน Role", 403);
+    if (id === me.id) return jsonError("เปลี่ยน Role ของตัวเองไม่ได้");
+    const role = str(body, "role", { required: true })!;
+    const { data: exists } = await service.from("roles").select("id").eq("id", role).maybeSingle();
+    if (!exists) return jsonError("ไม่พบ Role นี้");
+    update.role = role;
+  }
   if (!Object.keys(update).length) return jsonError("ไม่มีข้อมูลที่จะแก้ไข");
+  const guard = await guardTarget(service, id, perms);
+  if (guard.error) return guard.error;
 
   const user = check(await service.from("users").update(update).eq("id", id).select().single());
   await logAdmin(service, email, "update", "users", id, update);
   return ok({ user });
 });
 
-export const DELETE = adminRoute<P>(async (_req, { service, email, user }, { id }) => {
+export const DELETE = adminRoute<P>("members", async (_req, { service, email, user, perms }, { id }) => {
   if (id === user.id) return jsonError("ลบบัญชีตัวเองไม่ได้");
-  const { data: target } = await service.from("users").select("email").eq("id", id).maybeSingle();
+  const { target, error: denied } = await guardTarget(service, id, perms);
+  if (denied) return denied;
   // ลบจาก auth.users → cascade ลบ users, purchases, watched_videos, notifications
   const { error } = await service.auth.admin.deleteUser(id);
   if (error) {

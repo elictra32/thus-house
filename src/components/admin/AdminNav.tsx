@@ -2,24 +2,28 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
+import type { Permission } from "@/lib/permissions";
 
-const items = [
+// perm = สิทธิ์ที่ต้องมีจึงจะเห็นเมนู (ไม่ระบุ = ทุกคนที่เข้า /admin ได้)
+const items: { href: string; label: string; icon: string; perm?: Permission }[] = [
   { href: "/admin", label: "Dashboard", icon: "▦" },
-  { href: "/admin/payments", label: "อนุมัติการชำระเงิน", icon: "✓" },
-  { href: "/admin/members", label: "สมาชิก", icon: "👥" },
-  { href: "/admin/classes", label: "คอร์ส & วิดีโอ", icon: "▶" },
-  { href: "/admin/live-classes", label: "Live Classes", icon: "●" },
-  { href: "/admin/email", label: "ส่งอีเมล", icon: "✉" },
-  { href: "/admin/analytics", label: "Analytics", icon: "↗" },
-  { href: "/admin/logs", label: "Audit Log", icon: "≡" },
+  { href: "/admin/payments", label: "อนุมัติการชำระเงิน", icon: "✓", perm: "payments" },
+  { href: "/admin/members", label: "สมาชิก", icon: "👥", perm: "members" },
+  { href: "/admin/classes", label: "คอร์ส & วิดีโอ", icon: "▶", perm: "classes" },
+  { href: "/admin/live-classes", label: "Live Classes", icon: "●", perm: "live" },
+  { href: "/admin/email", label: "ส่งอีเมล", icon: "✉", perm: "email" },
+  { href: "/admin/analytics", label: "Analytics", icon: "↗", perm: "dashboard" },
+  { href: "/admin/logs", label: "Audit Log", icon: "≡", perm: "logs" },
+  { href: "/admin/roles", label: "Role & สิทธิ์", icon: "🔑", perm: "roles" },
   { href: "/dashboard", label: "กลับหน้าเว็บ", icon: "←" },
 ];
 
-export default function AdminNav() {
+export default function AdminNav({ permissions }: { permissions: Permission[] }) {
   const path = usePathname();
+  const visible = items.filter((i) => !i.perm || permissions.includes(i.perm));
   return (
     <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0">
-      {items.map((i) => {
+      {visible.map((i) => {
         const active = i.href === "/admin" ? path === "/admin" : path.startsWith(i.href);
         return (
           <Link

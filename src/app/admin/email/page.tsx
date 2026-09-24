@@ -7,7 +7,7 @@ import type { AdminLog } from "@/types/database";
 export const metadata = { title: "ส่งอีเมล" };
 
 export default async function EmailPage() {
-  const { service } = await requirePageAdmin();
+  const { service } = await requirePageAdmin("email");
   const [{ data: classes }, { data: logs }] = await Promise.all([
     service.from("classes").select("id, name").order("created_at"),
     service.from("admin_logs").select("*").eq("action", "email").order("created_at", { ascending: false }).limit(20),

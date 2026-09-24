@@ -1,6 +1,6 @@
 import { adminRoute, check, ok } from "@/lib/admin-route";
 
-export const GET = adminRoute(async (req, { service }) => {
+export const GET = adminRoute("payments", async (req, { service }) => {
   const status = new URL(req.url).searchParams.get("status");
   let q = service
     .from("purchases")

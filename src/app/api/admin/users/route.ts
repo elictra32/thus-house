@@ -3,14 +3,14 @@ import { unconfirmedUserIds } from "@/lib/email-confirm";
 
 const PAGE_SIZE = 20;
 
-export const GET = adminRoute(async (req, { service }) => {
+export const GET = adminRoute("members", async (req, { service }) => {
   const sp = new URL(req.url).searchParams;
   const page = Math.max(1, Number(sp.get("page")) || 1);
   const q = sp.get("q")?.trim();
   const status = sp.get("status");
 
   const unconfirmed = await unconfirmedUserIds(service);
-  let query = service.from("users").select("*", { count: "exact" }).order("created_at", { ascending: false });
+  let query = service.from("users").select("*, roles(name)", { count: "exact" }).order("created_at", { ascending: false });
   if (q) {
     const safe = q.replace(/[,()%]/g, " ");
     query = query.or(`name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`);

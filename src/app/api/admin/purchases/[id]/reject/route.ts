@@ -2,7 +2,7 @@ import { adminRoute, check, ok, readJson, must } from "@/lib/admin-route";
 import { jsonError, logAdmin } from "@/lib/auth";
 import { str } from "@/lib/validate";
 
-export const POST = adminRoute<{ id: string }>(async (req, { service, email }, { id }) => {
+export const POST = adminRoute<{ id: string }>("payments", async (req, { service, email }, { id }) => {
   const reason = str(await readJson(req), "reason", { required: true, max: 500 });
   const { data: p } = await service.from("purchases").select("*, classes(name)").eq("id", id).maybeSingle();
   if (!p) return jsonError("ไม่พบรายการ", 404);

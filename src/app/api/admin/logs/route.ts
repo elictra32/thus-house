@@ -2,7 +2,7 @@ import { adminRoute, check, ok } from "@/lib/admin-route";
 
 const PAGE_SIZE = 30;
 
-export const GET = adminRoute(async (req, { service }) => {
+export const GET = adminRoute("logs", async (req, { service }) => {
   const sp = new URL(req.url).searchParams;
   const page = Math.max(1, Number(sp.get("page")) || 1);
   const action = sp.get("action");

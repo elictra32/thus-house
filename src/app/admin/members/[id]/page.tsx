@@ -11,29 +11,33 @@ import { PageLoading } from "@/components/LoadingSpinner";
 import { api } from "@/lib/api-client";
 import { useApi } from "@/lib/use-api";
 import { baht, formatDate, isActivePurchase, toBangkokDate } from "@/lib/utils";
-import type { Purchase, User } from "@/types/database";
+import type { Purchase, Role, User } from "@/types/database";
 
 type Detail = {
-  user: User;
+  user: User & { roles: { name: string } | null };
   purchases: (Purchase & { classes: { id: string; name: string; videos_count: number } | null })[];
   watchedByClass: Record<string, number>;
   emailConfirmed: boolean;
+  isOwner: boolean;
 };
 
 export default function MemberDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
   const { data, error, loading, setData, reload } = useApi<Detail>(`/api/admin/users/${params.id}`);
+  const { data: me } = useApi<{ user: User | null; permissions: string[] }>("/api/auth/me");
+  const canManageRoles = !!me?.permissions.includes("roles");
+  const { data: roleList } = useApi<{ roles: Role[] }>(canManageRoles ? "/api/admin/roles" : null);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  async function setStatus(status: string) {
+  async function update(body: Record<string, string>) {
     setSaving(true);
     setActionError("");
     try {
-      const { user } = await api.put<{ user: User }>(`/api/admin/users/${params.id}`, { status });
-      setData((d) => (d ? { ...d, user } : d));
+      await api.put(`/api/admin/users/${params.id}`, body);
+      reload();
     } catch (err) {
       setActionError((err as Error).message);
     } finally {
@@ -101,12 +105,26 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
           <Row label="เข้าสู่ระบบล่าสุด" value={formatDate(user.last_login_at, true)} />
           <div className="border-t border-line pt-4">
             <p className="mb-2 flex items-center gap-2 text-xs text-muted">สถานะ <StatusBadge status={user.status} /></p>
-            <Select name="status" value={user.status} disabled={saving} onChange={(e) => setStatus(e.target.value)}>
+            <Select name="status" value={user.status} disabled={saving} onChange={(e) => update({ status: e.target.value })}>
               <option value="active">ใช้งาน (active)</option>
               <option value="inactive">ไม่ใช้งาน (inactive)</option>
               <option value="suspended">ระงับ (suspended)</option>
             </Select>
             <p className="mt-2 text-xs text-subtle">inactive / suspended จะเข้าดูวิดีโอไม่ได้ · suspended จะล็อกอินไม่ได้</p>
+          </div>
+          <div className="border-t border-line pt-4">
+            <p className="mb-2 text-xs text-muted">Role</p>
+            {data.isOwner ? (
+              <p>Head Admin <span className="text-xs text-subtle">· เจ้าของระบบ เปลี่ยนไม่ได้</span></p>
+            ) : canManageRoles && roleList && me?.user?.id !== user.id ? (
+              <Select name="role" value={user.role} disabled={saving} onChange={(e) => update({ role: e.target.value })}>
+                {roleList.roles.map((r) => (
+                  <option key={r.id} value={r.id}>{r.name}</option>
+                ))}
+              </Select>
+            ) : (
+              <p>{user.roles?.name ?? user.role}</p>
+            )}
           </div>
         </div>
 

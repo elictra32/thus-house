@@ -11,7 +11,7 @@ import { useApi } from "@/lib/use-api";
 import { formatDate } from "@/lib/utils";
 import type { User } from "@/types/database";
 
-type Row = User & { email_confirmed: boolean };
+type Row = User & { email_confirmed: boolean; roles: { name: string } | null };
 
 export default function MembersPage({ searchParams }: { searchParams: { status?: string } }) {
   const [q, setQ] = useState("");
@@ -68,9 +68,9 @@ export default function MembersPage({ searchParams }: { searchParams: { status?:
         <PageLoading />
       ) : (
         <div className="card overflow-x-auto">
-          <table className="w-full min-w-[640px]">
+          <table className="w-full min-w-[720px]">
             <thead>
-              <tr><th className="th">ชื่อ</th><th className="th">อีเมล</th><th className="th">เบอร์โทร</th><th className="th">สถานะ</th><th className="th">สมัครเมื่อ</th><th className="th" /></tr>
+              <tr><th className="th">ชื่อ</th><th className="th">อีเมล</th><th className="th">เบอร์โทร</th><th className="th">Role</th><th className="th">สถานะ</th><th className="th">สมัครเมื่อ</th><th className="th" /></tr>
             </thead>
             <tbody>
               {data?.users.map((u) => (
@@ -78,6 +78,7 @@ export default function MembersPage({ searchParams }: { searchParams: { status?:
                   <td className="td font-medium">{u.name || "-"}</td>
                   <td className="td text-muted">{u.email}</td>
                   <td className="td text-muted">{u.phone || "-"}</td>
+                  <td className="td">{u.roles?.name ?? u.role}</td>
                   <td className="td">
                     <StatusBadge status={u.status} />
                     {!u.email_confirmed && (
@@ -93,7 +94,7 @@ export default function MembersPage({ searchParams }: { searchParams: { status?:
                   <td className="td text-right"><Link href={`/admin/members/${u.id}`} className="text-brand-light hover:underline">ดูรายละเอียด →</Link></td>
                 </tr>
               ))}
-              {data?.users.length === 0 && <tr><td className="td text-center text-muted" colSpan={6}>ไม่พบสมาชิก</td></tr>}
+              {data?.users.length === 0 && <tr><td className="td text-center text-muted" colSpan={7}>ไม่พบสมาชิก</td></tr>}
             </tbody>
           </table>
         </div>

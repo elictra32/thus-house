@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { isAdminEmail } from "@/lib/admin";
 
 const PROTECTED = ["/dashboard", "/classes", "/payment", "/profile", "/admin"];
 
@@ -41,7 +40,6 @@ export async function middleware(request: NextRequest) {
   };
 
   if (!user && PROTECTED.some((p) => path.startsWith(p))) return redirectTo("/login");
-  if (user && path.startsWith("/admin") && !isAdminEmail(user.email)) return redirectTo("/dashboard");
   if (user && (path === "/login" || path === "/signup")) return redirectTo("/dashboard");
 
   return response;

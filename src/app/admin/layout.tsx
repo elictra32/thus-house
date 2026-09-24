@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export const metadata = { title: { default: "Admin", template: "%s · Admin · Thushouse" } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user } = await requirePageAdmin();
+  const { user, perms } = await requirePageAdmin();
   return (
     <div className="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
       <div className="border-b border-line bg-panel lg:border-b-0 lg:border-r">
@@ -16,7 +16,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Logo href="/admin" />
             <p className="mt-1 text-xs font-bold tracking-[2px] text-brand-light">ADMIN</p>
           </div>
-          <AdminNav />
+          <AdminNav permissions={[...perms]} />
           <div className="hidden p-5 text-xs text-subtle lg:absolute lg:bottom-0 lg:block">
             <p className="mb-3 truncate">{user.email}</p>
             <LogoutButton />

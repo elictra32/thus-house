@@ -1,9 +1,11 @@
 import "server-only";
+import { cache } from "react";
 import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 import type { User as AuthUser, SupabaseClient } from "@supabase/supabase-js";
 import { createServerSupabase, createServiceSupabase } from "./supabase-server";
 import { isAdminEmail } from "./admin";
+import { ALL_PERMISSIONS, isPermission, type Permission } from "./permissions";
 import type { User } from "@/types/database";
 
 export async function getAuthUser() {
@@ -20,11 +22,27 @@ export async function requirePageUser() {
   return { supabase, user, profile };
 }
 
-export async function requirePageAdmin() {
+// สิทธิ์ Admin ของผู้ใช้ตาม Role (cache ต่อ request)
+// เจ้าของระบบใน NEXT_PUBLIC_ADMIN_EMAILS ได้ทุกสิทธิ์เสมอ — กันล็อกตัวเองออกจากระบบ Role
+export const getPermissions = cache(async (userId: string | undefined, email: string | null | undefined) => {
+  if (!userId) return new Set<Permission>();
+  if (isAdminEmail(email)) return new Set<Permission>(ALL_PERMISSIONS);
+  const { data } = await createServiceSupabase()
+    .from("users").select("status, roles(permissions)").eq("id", userId).maybeSingle();
+  // บัญชีที่ไม่ได้ active (inactive / suspended) ไม่มีสิทธิ์ Admin
+  if (!data || data.status !== "active") return new Set<Permission>();
+  const perms = ((data.roles as unknown as { permissions: string[] } | null)?.permissions ?? []).filter(isPermission);
+  return new Set<Permission>(perms);
+});
+
+// หน้า /admin: ต้องมีสิทธิ์ Admin อย่างน้อย 1 อย่าง (และสิทธิ์ perm ถ้าระบุ)
+export async function requirePageAdmin(perm?: Permission) {
   const { user } = await getAuthUser();
   if (!user) redirect("/login");
-  if (!isAdminEmail(user.email)) redirect("/dashboard");
-  return { user, service: createServiceSupabase() };
+  const perms = await getPermissions(user.id, user.email);
+  if (!perms.size) redirect("/dashboard");
+  if (perm && !perms.has(perm)) redirect("/admin");
+  return { user, perms, service: createServiceSupabase() };
 }
 
 type ApiAuth =
@@ -39,15 +57,16 @@ export async function requireApiUser(): Promise<ApiAuth> {
 }
 
 type ApiAdmin =
-  | { ok: true; user: AuthUser; service: SupabaseClient; email: string }
+  | { ok: true; user: AuthUser; service: SupabaseClient; email: string; perms: Set<Permission> }
   | { ok: false; res: NextResponse };
 
-// ใช้ใน /api/admin/*: คืน 403 ถ้าไม่ใช่ Admin
-export async function requireApiAdmin(): Promise<ApiAdmin> {
+// ใช้ใน /api/admin/*: คืน 403 ถ้า Role ไม่มีสิทธิ์ perm
+export async function requireApiAdmin(perm: Permission): Promise<ApiAdmin> {
   const { user } = await getAuthUser();
   if (!user) return { ok: false, res: jsonError("กรุณาเข้าสู่ระบบ", 401) };
-  if (!isAdminEmail(user.email)) return { ok: false, res: jsonError("ไม่มีสิทธิ์เข้าถึง", 403) };
-  return { ok: true, user, service: createServiceSupabase(), email: user.email! };
+  const perms = await getPermissions(user.id, user.email);
+  if (!perms.has(perm)) return { ok: false, res: jsonError("ไม่มีสิทธิ์เข้าถึง", 403) };
+  return { ok: true, user, service: createServiceSupabase(), email: user.email!, perms };
 }
 
 export function jsonError(message: string, status = 400) {
