@@ -111,14 +111,25 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   const who = displayName(me);
   const { data: cls } = await service.from("classes").select("name").eq("id", video.class_id).maybeSingle();
 
-  // แจ้งเจ้าของคอมเมนต์เมื่อมีคนตอบ
-  if (parentOwner && parentOwner !== auth.user.id) {
-    await service.from("notifications").insert({
-      user_id: parentOwner,
-      type: "comment",
-      title: `${who} ตอบคอมเมนต์ของคุณ`,
-      message: `บทเรียน "${video.title}": ${text.slice(0, 200)}`,
-    });
+  // แจ้งเตือน 🔔 คนในกระทู้เมื่อมีคนตอบ: เจ้าของคอมเมนต์ที่ถูกตอบ + เจ้าของกระทู้ + คนที่เคยตอบในกระทู้นี้ (ยกเว้นตัวเอง)
+  if (parentId) {
+    const { data: thread } = await service
+      .from("lesson_comments").select("user_id").or(`id.eq.${parentId},parent_id.eq.${parentId}`);
+    const targets = new Set((thread ?? []).map((t) => t.user_id));
+    if (parentOwner) targets.add(parentOwner);
+    targets.delete(auth.user.id);
+    const link = `/classes/${video.class_id}?v=${video.id}#comment-${row.id}`;
+    if (targets.size) {
+      await service.from("notifications").insert(
+        Array.from(targets).map((uid) => ({
+          user_id: uid,
+          type: "comment",
+          title: uid === parentOwner ? `${who} ตอบคอมเมนต์ของคุณ` : `${who} ตอบในกระทู้ที่คุณร่วมคุย`,
+          message: `บทเรียน "${video.title}": ${text.slice(0, 200)}`,
+          link,
+        })),
+      );
+    }
   }
   await notifyDiscord(
     "comment",

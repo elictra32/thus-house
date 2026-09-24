@@ -58,6 +58,7 @@ export async function POST(req: Request) {
   await service.from("notifications").insert({
     user_id: auth.user.id,
     type: "payment",
+    link: "/profile",
     title: "ได้รับสลิปแล้ว",
     message: `สลิปคอร์ส ${cls.name} อยู่ระหว่างรอตรวจสอบ`,
   });

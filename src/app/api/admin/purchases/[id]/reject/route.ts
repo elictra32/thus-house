@@ -16,6 +16,7 @@ export const POST = adminRoute<{ id: string }>("payments", async (req, { service
   await service.from("notifications").insert({
     user_id: p.user_id,
     type: "payment_rejected",
+    link: "/payment",
     title: "สลิปไม่ผ่านการตรวจสอบ",
     message: `คอร์ส ${p.classes?.name ?? ""}: ${reason} — แนบสลิปใหม่ได้ที่หน้าชำระเงิน`,
   });

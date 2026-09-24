@@ -8,6 +8,7 @@ export const POST = adminRoute<{ id: string }>("members", async (_req, { service
   await service.from("notifications").insert({
     user_id: id,
     type: "account",
+    link: "/dashboard",
     title: "บัญชีพร้อมใช้งานแล้ว",
     message: "ทีมงานยืนยันบัญชีของคุณแล้ว เข้าสู่ระบบได้เลย",
   });

@@ -40,6 +40,7 @@ export default function LessonComments({ videoId }: { videoId: string }) {
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const [replyText, setReplyText] = useState("");
   const [posting, setPosting] = useState(false);
+  const [highlight, setHighlight] = useState("");
 
   const load = useCallback(() => {
     api
@@ -48,6 +49,17 @@ export default function LessonComments({ videoId }: { videoId: string }) {
       .catch((e) => setError((e as Error).message));
   }, [videoId]);
   useEffect(load, [load]);
+
+  // มาจากแจ้งเตือน (#comment-<id>) → เลื่อนไปที่คอมเมนต์นั้นแล้วไฮไลต์สักครู่
+  useEffect(() => {
+    if (!data) return;
+    const id = window.location.hash.match(/^#comment-(.+)$/)?.[1];
+    if (!id || !data.comments.some((c) => c.id === id)) return;
+    setHighlight(id);
+    requestAnimationFrame(() => document.getElementById(`comment-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" }));
+    const t = setTimeout(() => setHighlight(""), 3500);
+    return () => clearTimeout(t);
+  }, [data]);
 
   async function post(body: string, parentId?: string) {
     if (!body.trim()) return;
@@ -89,7 +101,12 @@ export default function LessonComments({ videoId }: { videoId: string }) {
   const repliesOf = (id: string) => data?.comments.filter((c) => c.parentId === id) ?? [];
 
   const Item = ({ c, reply }: { c: Comment; reply?: boolean }) => (
-    <div className={`flex gap-3 ${reply ? "mt-4" : ""}`}>
+    <div
+      id={`comment-${c.id}`}
+      className={`-mx-2 flex scroll-mt-28 gap-3 rounded-2xl px-2 py-1 transition-colors duration-700 ${reply ? "mt-3" : ""} ${
+        highlight === c.id ? "bg-[#ec9e56]/15 ring-1 ring-inset ring-[#ec9e56]/40" : ""
+      }`}
+    >
       <div
         className={`flex shrink-0 items-center justify-center rounded-full font-bold ${reply ? "h-8 w-8 text-xs" : "h-10 w-10 text-sm"} ${
           c.staff ? "bg-gradient-to-br from-[#ba94c7] to-[#ec9e56] text-[#2d183c]" : "bg-white/10 text-ink"

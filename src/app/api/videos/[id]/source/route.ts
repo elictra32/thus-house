@@ -78,7 +78,7 @@ async function alertAdmins(service: SupabaseClient, who: string, userId: string,
   const message = `${who} เปิดบทเรียนต่างกัน ${count} บทภายใน 1 ชั่วโมง ระบบพักการขอลิงก์ไว้ชั่วคราว — ดูประวัติที่ Admin → สมาชิก`;
   if (ids.size) {
     await service.from("notifications").insert(
-      Array.from(ids).map((id) => ({ user_id: id, type: "security", title, message })),
+      Array.from(ids).map((id) => ({ user_id: id, type: "security", title, message, link: `/admin/members/${userId}` })),
     );
   }
 

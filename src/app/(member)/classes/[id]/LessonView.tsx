@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import VideoPlayer from "@/components/VideoPlayer";
 import VideoList from "@/components/VideoList";
 import LessonComments from "@/components/LessonComments";
@@ -19,6 +19,9 @@ export default function LessonView({
   const [currentId, setCurrentId] = useState(
     () => videos.find((v) => v.id === initialVideoId)?.id ?? videos.find((v) => !initialWatched.includes(v.id))?.id ?? videos[0].id,
   );
+  useEffect(() => {
+    if (initialVideoId && videos.some((v) => v.id === initialVideoId)) setCurrentId(initialVideoId);
+  }, [initialVideoId, videos]);
   const index = videos.findIndex((v) => v.id === currentId);
   const current = videos[index];
   const next = videos[index + 1];
