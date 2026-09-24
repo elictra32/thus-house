@@ -8,12 +8,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="th" suppressHydrationWarning>
+    // ค่าเริ่มต้น = โหมดมืด · ผู้ชมที่เคยเลือกโหมดสว่างไว้ จะถูกสลับกลับก่อนแสดงผล (กันหน้ากระพริบ)
+    <html lang="th" className="dark" suppressHydrationWarning>
       <head>
-        {/* ใช้โหมดสว่าง/มืดที่ผู้ชมเลือกไว้ก่อนแสดงผล (กันหน้ากระพริบ) */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `try{if(localStorage.getItem("thus-theme")==="dark")document.documentElement.classList.add("dark")}catch(e){}`,
+            __html: `try{if(localStorage.getItem("thus-theme")==="light")document.documentElement.classList.remove("dark")}catch(e){}`,
           }}
         />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
