@@ -85,7 +85,7 @@ export default function PaymentsPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {rows.map((p) => (
-            <button key={p.id} onClick={() => open(p)} className="card overflow-hidden text-left transition hover:border-brand/50">
+            <button key={p.id} onClick={() => open(p)} className="card overflow-hidden text-left transition hover:ring-brand/50">
               <div className="h-44 bg-raised">
                 {p.slip_url ? (
                   // eslint-disable-next-line @next/next/no-img-element

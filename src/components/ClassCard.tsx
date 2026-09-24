@@ -18,7 +18,7 @@ type Props = {
 
 export default function ClassCard({ cls, index = 0, href, progress, action }: Props) {
   return (
-    <article className="card flex flex-col overflow-hidden transition hover:border-edge hover:-translate-y-0.5">
+    <article className="card flex flex-col overflow-hidden transition hover:-translate-y-1 hover:ring-white/[0.14]">
       <Link
         href={href}
         className={`flex h-[165px] items-end bg-gradient-to-br p-[18px] ${gradients[index % gradients.length]}`}
