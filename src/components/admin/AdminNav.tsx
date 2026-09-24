@@ -12,6 +12,7 @@ const items: { href: string; label: string; icon: string; perm?: Permission }[] 
   { href: "/admin/classes", label: "คอร์ส & วิดีโอ", icon: "▶", perm: "classes" },
   { href: "/admin/live-classes", label: "Live Classes", icon: "●", perm: "live" },
   { href: "/admin/email", label: "ส่งอีเมล", icon: "✉", perm: "email" },
+  { href: "/admin/gallery", label: "รูปหน้าเว็บ", icon: "▣", perm: "content" },
   { href: "/admin/analytics", label: "Analytics", icon: "↗", perm: "dashboard" },
   { href: "/admin/logs", label: "Audit Log", icon: "≡", perm: "logs" },
   { href: "/admin/roles", label: "Role & สิทธิ์", icon: "🔑", perm: "roles" },

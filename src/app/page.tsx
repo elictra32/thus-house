@@ -2,12 +2,15 @@ import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import ClassCard from "@/components/ClassCard";
+import Link from "next/link";
 import { ButtonLink } from "@/components/Button";
-import { getPublicClasses } from "@/lib/data";
+import YouTubeLite from "@/components/YouTubeLite";
+import MeetupSlideshow from "@/components/MeetupSlideshow";
+import { getGallery, getPublicClasses } from "@/lib/data";
 
 export const dynamic = "force-dynamic";
 
-// วิดีโอแนะนำบนหน้าแรก (YouTube)
+// วิดีโอแนะนำบนหน้าแรก (YouTube) — แสดงปกก่อน ผู้ชมกดเล่นเอง
 const INTRO_VIDEO_ID = "fQoh2I0_89w";
 
 const stats = [
@@ -85,7 +88,7 @@ function Glow({ className }: { className: string }) {
 }
 
 export default async function Landing() {
-  const classes = await getPublicClasses();
+  const [classes, meetups, feedback] = await Promise.all([getPublicClasses(), getGallery("meetup"), getGallery("feedback")]);
 
   return (
     <div className="bg-paper text-charcoal">
@@ -105,7 +108,10 @@ export default async function Landing() {
               <br />
               Member
             </h1>
-            <p className="mt-6 max-w-[560px] text-lg leading-[1.75] text-charcoal/80">
+            <p className="mt-5 bg-gradient-to-r from-plum-700 via-[#b0619a] to-glow-orange bg-clip-text text-2xl font-extrabold italic tracking-[-0.5px] text-transparent md:text-3xl">
+              Winners Average Winners
+            </p>
+            <p className="mt-5 max-w-[560px] text-lg leading-[1.75] text-charcoal/80">
               หลักสูตรที่ออกแบบมาเพื่อพัฒนาเทรดเดอร์ตั้งแต่ระดับพื้นฐาน ไปจนถึงการต่อยอดสู่การเป็นมืออาชีพ
               ภายในระยะเวลา <b className="text-plum-900">1 ปีเต็ม</b> — เน้นทั้ง <b className="text-plum-900">&quot;ทักษะการเทรดจริง&quot;</b>{" "}
               และ <b className="text-plum-900">&quot;กระบวนการคิดแบบมืออาชีพ&quot;</b>
@@ -122,14 +128,7 @@ export default async function Landing() {
 
           <div className="overflow-hidden rounded-[22px] border border-white/70 bg-white/40 p-2 shadow-[0_30px_80px_-20px_#2d183c55] backdrop-blur">
             <div className="relative aspect-video overflow-hidden rounded-[16px] bg-plum-900">
-              <iframe
-                src={`https://www.youtube-nocookie.com/embed/${INTRO_VIDEO_ID}?rel=0&modestbranding=1`}
-                title="THUS House of Traders"
-                className="absolute inset-0 h-full w-full"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowFullScreen
-                loading="lazy"
-              />
+              <YouTubeLite id={INTRO_VIDEO_ID} title="THUS House of Traders" />
             </div>
           </div>
         </div>
@@ -148,9 +147,12 @@ export default async function Landing() {
       {/* ---------- Highlights ---------- */}
       <section id="highlights" className="scroll-mt-20 px-[6vw] py-20">
         <p className="text-xs font-bold tracking-[3px] text-plum-700">HIGHLIGHTS</p>
-        <h2 className="mt-3 max-w-3xl text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">
-          เรียนจากตลาดจริง ไปพร้อมกัน 1 ปีเต็ม
+        <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-6xl">
+          Learn smarter.
+          <br />
+          <span className="text-plum-500">Build better.</span>
         </h2>
+        <p className="mt-4 text-lg text-charcoal/70">เรียนจากตลาดจริง ไปพร้อมกัน 1 ปีเต็ม</p>
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {highlights.map((h, i) => (
             <div key={h.title} className="rounded-2xl border border-charcoal/10 bg-paper-light p-6 transition hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-25px_#2d183c66]">
@@ -189,6 +191,52 @@ export default async function Landing() {
           </div>
         </div>
       </section>
+
+      {/* ---------- Meetup (สไลด์โชว์) ---------- */}
+      {meetups.length > 0 && (
+        <section id="meetup" className="relative scroll-mt-20 overflow-hidden bg-plum-900 px-[6vw] pb-24 pt-4 text-white">
+          <Glow className="-left-32 top-10 h-[380px] w-[380px] bg-glow-lilac/25" />
+          <Glow className="-right-24 bottom-0 h-[340px] w-[420px] bg-glow-orange/20" />
+          <div className="relative">
+            <div className="mb-10 text-center">
+              <p className="text-xs font-bold tracking-[3px] text-plum-300">COMMUNITY & NETWORKING</p>
+              <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">THUS Meetup</h2>
+              <p className="mx-auto mt-3 max-w-xl text-white/75">
+                พบปะสังสรรค์ แลกเปลี่ยนประสบการณ์กับสมาชิกและทีมงาน THUS House — เฉลี่ย 2 เดือนครั้ง
+              </p>
+            </div>
+            <MeetupSlideshow items={meetups} />
+          </div>
+        </section>
+      )}
+
+      {/* ---------- Feedback (ตัวอย่าง → หน้า /feedback) ---------- */}
+      {feedback.length > 0 && (
+        <section id="feedback" className="relative scroll-mt-20 overflow-hidden px-[6vw] py-20">
+          <Glow className="-right-40 top-0 h-[380px] w-[380px] bg-glow-lilac/45" />
+          <div className="relative">
+            <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-bold tracking-[3px] text-plum-700">FEEDBACK LOVER</p>
+                <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">เสียงจากสมาชิก</h2>
+              </div>
+              <ButtonLink href="/feedback" variant="paper">ดู Feedback ทั้งหมด ({feedback.length}) →</ButtonLink>
+            </div>
+            <div className="grid gap-5 md:grid-cols-3">
+              {feedback.slice(0, 3).map((f) => (
+                <Link
+                  key={f.id}
+                  href="/feedback"
+                  className="overflow-hidden rounded-2xl border border-charcoal/10 shadow-[0_20px_50px_-30px_#2d183c88] transition hover:-translate-y-1"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={f.image_url} alt={f.caption ?? "Feedback จากสมาชิก THUS"} loading="lazy" className="aspect-video w-full object-cover" />
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ---------- หลักสูตร Class ปรับพื้นฐาน ---------- */}
       <section id="curriculum" className="relative scroll-mt-20 overflow-hidden px-[6vw] py-20">
@@ -231,12 +279,12 @@ export default async function Landing() {
       <section className="relative overflow-hidden px-[6vw] py-24 text-center">
         <Glow className="left-1/2 top-1/2 h-[320px] w-[620px] -translate-x-1/2 -translate-y-1/2 bg-glow-lilac/45" />
         <div className="relative">
-          <h2 className="text-4xl font-extrabold uppercase tracking-[-1.5px] md:text-6xl">Become a THUS Member</h2>
+          <h2 className="text-5xl font-extrabold tracking-[-2px] md:text-7xl">Build your edge.</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-charcoal/75">
-            เริ่มพัฒนาการเทรดอย่างเป็นระบบไปพร้อมกับทีม THUS House of Traders
+            Thushouse — พื้นที่สำหรับคนที่อยากเรียนจริงและพัฒนาตัวเองอย่างต่อเนื่อง
           </p>
           <ButtonLink href="/signup" variant="plum" className="mt-8 px-7 py-4 text-base">
-            สมัครสมาชิก →
+            สมัคร THUS Member →
           </ButtonLink>
         </div>
       </section>

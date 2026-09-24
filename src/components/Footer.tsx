@@ -6,6 +6,7 @@ export default function Footer() {
       <div className="flex items-center gap-3">
         <Image src="/brand/wordmark-white.png" alt="THUS House of Traders" width={83} height={32} />
       </div>
+      <span className="tracking-[2px]">Learn · Practice · Improve</span>
       <span>© {new Date().getFullYear()} THUS House of Traders · @THUSHOUSE</span>
     </footer>
   );

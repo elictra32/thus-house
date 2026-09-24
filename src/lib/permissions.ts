@@ -7,6 +7,7 @@ export const PERMISSIONS = [
   { key: "classes", label: "จัดการคอร์ส & วิดีโอ (ดูวิดีโอได้ทุกคอร์ส)" },
   { key: "live", label: "จัดการ Live Class" },
   { key: "email", label: "ส่งอีเมล / ประกาศ" },
+  { key: "content", label: "จัดการรูปหน้าเว็บ (Feedback / Meetup)" },
   { key: "logs", label: "ดู Audit Log" },
   { key: "roles", label: "จัดการ Role และเปลี่ยน Role ของผู้อื่น" },
 ] as const;

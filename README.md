@@ -132,6 +132,9 @@ npm run dev                  # http://localhost:3000
 | GET / POST | `/api/admin/videos?classId=` | รายการ / เพิ่ม `{ class_id, title, video_url, duration_seconds, description? }` |
 | PUT / DELETE | `/api/admin/videos/[id]` | แก้ไข / ลบ |
 | PUT | `/api/admin/videos/reorder` | `{ classId, ids: [...] }` |
+| GET / POST | `/api/admin/gallery?kind=feedback\|meetup` | รูป Feedback / Meetup · อัปโหลด FormData `kind, file, caption?` (สิทธิ์ `content`) |
+| PUT / DELETE | `/api/admin/gallery/[id]` | แก้คำบรรยาย / ลบรูป |
+| PUT | `/api/admin/gallery/reorder` | `{ kind, ids: [...] }` |
 | GET / POST | `/api/admin/live-classes` | รายการ / สร้าง |
 | PUT / DELETE | `/api/admin/live-classes/[id]` | แก้ไข (รวมเปลี่ยน `status`) / ลบ |
 | POST | `/api/admin/email/send-bulk` | `{ target: all\|class\|status, classId?, status?, subject, message, notify? }` |
