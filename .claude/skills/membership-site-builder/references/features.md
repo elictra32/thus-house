@@ -7,11 +7,14 @@
 |---|---|---|
 | สมัคร / ล็อกอิน | `src/app/api/auth/signup`, `login`, `src/app/signup/SignupForm.tsx` | fallback เมื่อส่งอีเมลไม่ได้ + ห้ามล็อกอินถ้ายังไม่ยืนยัน |
 | Dashboard | `src/app/(member)/dashboard/page.tsx` | คอร์สของฉัน + progress + วันหมดอายุ, Live, คอร์สที่ซื้อได้/ต่ออายุ |
-| หน้าเรียน | `src/app/(member)/classes/[id]`, `src/components/VideoPlayer.tsx` | Drive iframe, บังปุ่ม pop-out, นับเวลาเมื่อหน้าต่าง active, ปุ่มเต็มจอ (fallback iPhone) |
+| หน้าเรียน | `src/app/(member)/classes/[id]/LessonView.tsx`, `src/components/VideoPlayer.tsx`, `YouTubeLesson.tsx` | YouTube: IFrame API `controls=0` + ชั้นบัง + ปุ่มของเว็บ (เล่น/เลื่อน/±10/ความเร็ว/CC/เต็มจอ) นับเวลาเฉพาะตอนเล่น · Drive: iframe + บังปุ่ม pop-out · key ของ element พี่น้องต้องไม่ซ้ำ |
+| ลิงก์วิดีโอทีละบท | `src/app/api/videos/[id]/source`, `LESSON_COLUMNS` ใน `class-access.ts` | DB: `grant select (…ไม่มี video_url)` ให้ authenticated · log `video_access_logs` · เกิน 30 บท/ชม. → 429 + แจ้ง Admin/Discord |
+| คอมเมนต์ + ไลก์ | `src/components/LessonComments.tsx`, `/api/videos/[id]/comments`, `/api/videos/[id]/like`, `/api/comments/[id]` | ตอบ 1 ชั้น · แจ้งทุกคนในกระทู้ · deep link `?v=<id>#comment-<id>` ไฮไลต์ส้ม · ดึงผู้เขียนแยก (ห้าม embed users) |
+| ถามผู้สอน | `src/app/(member)/messages`, `/api/messages`, `src/app/admin/messages` | สิทธิ์ `community` ตอบ/ลบ |
 | สิทธิ์เรียน | `src/lib/class-access.ts`, `isActivePurchase` ใน `src/lib/utils.ts` | approved + ยังไม่หมดอายุ (ตรวจทั้งในโค้ดและ RLS) |
 | ชำระเงิน | `src/app/(member)/payment`, `src/app/api/purchases/upload-slip` | ตรวจ magic bytes PNG/JPG, ≤4MB (Vercel จำกัด ~4.5MB), ราคาเอาจาก DB |
-| โปรไฟล์ | `src/app/(member)/profile` | แก้ชื่อ/เบอร์, ประวัติซื้อ + วันหมดอายุ |
-| แจ้งเตือน 🔔 | `src/components/NotificationBell.tsx`, `/api/notifications` | อนุมัติ/ปฏิเสธ/ยืนยันบัญชี/ประกาศ |
+| โปรไฟล์ | `src/app/(member)/profile` | แก้ชื่อ/ชื่อเล่น/เบอร์, แสดงรหัสสมาชิก, ประวัติซื้อ + วันหมดอายุ |
+| แจ้งเตือน 🔔 | `src/components/NotificationBell.tsx`, `/api/notifications` (+ `read-all`) | `notifications.link` กดแล้วพาไปหน้า · poll 60 วิ · badge ส้ม |
 
 ## Admin (`/admin`, สิทธิ์ตาม Role)
 | ฟีเจอร์ | ไฟล์ | สิทธิ์ |
@@ -25,6 +28,10 @@
 | รูปหน้าเว็บ (Feedback/Meetup) | `src/app/admin/gallery` | `content` |
 | Audit log | `src/app/admin/logs` | `logs` |
 | Role & สิทธิ์ | `src/app/admin/roles` | `roles` |
+| ข้อความถึงผู้สอน / ลบคอมเมนต์ | `src/app/admin/messages` | `community` |
+| Usage & ค่าใช้จ่าย + ปุ่มสำรองข้อมูล | `src/app/admin/usage`, `src/lib/usage-plans.ts`, RPC `admin_usage()` | `dashboard` (ปุ่ม backup = `roles`) |
+| ตัวเลขส้มบนเมนู | `src/components/admin/AdminNav.tsx`, `/api/admin/badges` | ตามสิทธิ์ · refresh หลัง action (event `admin-badges`) |
+| Discord / cron / backup | `src/lib/discord.ts`, `src/app/api/cron/daily`, `src/lib/backup.ts`, `vercel.json` | env: `DISCORD_WEBHOOK_URL`, `DISCORD_BACKUP_WEBHOOK_URL`, `CRON_SECRET` |
 
 ระบบ Role: `src/lib/permissions.ts` (รายการสิทธิ์), `getPermissions` ใน `src/lib/auth.ts`,
 ทุก API admin ใช้ `adminRoute("<สิทธิ์>", handler)`, หน้า server ใช้ `requirePageAdmin("<สิทธิ์>")`
@@ -43,6 +50,5 @@
 
 ## ฟีเจอร์ที่ควรเสนอในอนาคต
 - ย้ายวิดีโอไป Bunny Stream (signed URL + รู้สถานะเล่น/หยุดจริง + เรียนต่อจากจุดเดิม)
-- แจ้งเตือนก่อนสมาชิกหมดอายุ (cron + อีเมล)
 - ชำระเงินผ่าน PromptPay QR / payment gateway
 - หน้าเสียงจากสมาชิกแบบข้อความ (ไม่ใช่แค่รูป)
