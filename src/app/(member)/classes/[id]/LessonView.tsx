@@ -27,8 +27,9 @@ export default function LessonView({
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
       <div>
+        {/* key ต้องไม่ซ้ำกันระหว่าง element พี่น้อง — ถ้าซ้ำ React จะไม่ถอดตัวเก่าออก (วิดีโอ/คอมเมนต์ซ้อนกัน) */}
         <VideoPlayer
-          key={current.id}
+          key={`player-${current.id}`}
           video={current}
           watched={watched.has(current.id)}
           onWatched={() => setWatched((s) => new Set(s).add(current.id))}
@@ -45,7 +46,7 @@ export default function LessonView({
             </button>
           )}
         </div>
-        <LessonComments key={current.id} videoId={current.id} />
+        <LessonComments key={`comments-${current.id}`} videoId={current.id} />
       </div>
 
       <aside className="card h-fit overflow-hidden lg:sticky lg:top-24">
