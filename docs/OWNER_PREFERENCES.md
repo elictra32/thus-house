@@ -158,3 +158,6 @@ Class ปรับพื้นฐาน 20 บท: พื้นฐาน Futures
 - **Journal สี/โลโก้ (เจ้าของสั่ง):** สีกำไร/ขาดทุนแบบนุ่มตา teal `#5cc6c8` / coral `#f59a8c` (แทนเขียว/แดงสด) · โลโก้ THUS JOURNAL ใหญ่ขึ้น (18px บรรทัดเดียว)
 - **หน้าภาพรวม Journal:** ลาก/ย่อขยาย/ซ่อนบล็อกได้ แล้วกดบันทึก (เก็บใน profiles.dashboard_layout) · มีบล็อกสัดส่วนพอร์ตที่ถืออยู่ (Leverage รวม/สุทธิ, Long/Short, ถ้าโดน SL ทุกไม้), ระยะถือ, คำแนะนำอัตโนมัติ
 - เจ้าของบอก "ลุย/deploy เลย" ระหว่างงาน = ข้ามภาพตัวอย่างได้ merge ขึ้นเว็บได้ทันที
+- **Journal หลายพอร์ต:** TFEX / Forex / หุ้นไทย / หุ้น US / Crypto (สกุลเงิน/หน่วย/สินค้าตามตลาด) · ไม้เดิมทั้งหมดอยู่พอร์ต "TFEX"
+- **แหล่งราคา Journal:** Google Sheet ของเจ้าของ (สูตร Apps Script `TV_CLOSE_PRICE` สำหรับ TFEX + `GOOGLEFINANCE` หุ้นไทย/US) ผ่าน `/api/symbols?token=` + CSV ที่ Publish · API ฟรีที่ใช้ได้จากเซิร์ฟเวอร์: Binance/OKX/CoinGecko (crypto), Frankfurter ECB (forex รายวัน), PAXG (ทอง) · ใช้ไม่ได้: Yahoo (429), Stooq (404), TFEX/SET (Incapsula 403)
+- เจ้าของบอก "จัดไปเลย deploy เลย เชื่อมือ" → งานชุดใหญ่ merge ได้เลยไม่ต้องส่งภาพก่อน (ครั้งนั้น)
