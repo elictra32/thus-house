@@ -91,19 +91,19 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
         </Select>
 
         <div>
-          <p className="label">2. โอนเงินเข้าบัญชี</p>
+          <p className="label">2. โอนชำระมาที่</p>
           <div className="rounded-xl border border-dashed border-brand/40 bg-brand/5 p-4 text-sm leading-7">
             <div>{BANK.name}</div>
             <div>
               เลขที่บัญชี <b className="text-lg tracking-wide">{BANK.account}</b>
             </div>
-            <div>ชื่อบัญชี <b>{BANK.owner}</b></div>
+            <div>บัญชี <b>{BANK.owner}</b></div>
             {selected && <div className="mt-1">ยอดโอน <b className="text-brand-light">{baht(selected.price)}</b></div>}
           </div>
         </div>
 
         <div>
-          <label htmlFor="slip" className="label">3. แนบสลิป (PNG, JPG ไม่เกิน 4MB)</label>
+          <label htmlFor="slip" className="label">3. แนบหลักฐานการชำระเงิน (PNG, JPG ไม่เกิน 4MB)</label>
           <input
             id="slip"
             type="file"
@@ -138,6 +138,7 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
           ยืนยันการชำระเงิน
         </Button>
         <p className="mt-3 text-xs text-subtle">หลังอนุมัติ เรียนได้ตลอดชีพ</p>
+        <p className="mt-2 text-xs font-bold text-red-300">สงวนสิทธิ์ในการคืนเงินทุกกรณี</p>
       </aside>
     </form>
   );

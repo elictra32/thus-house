@@ -30,9 +30,9 @@ export function driveEmbedUrl(url: string) {
 }
 
 export const BANK = {
-  name: process.env.NEXT_PUBLIC_BANK_NAME ?? "ธนาคารกสิกรไทย",
-  account: process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "xxx-x-xxxxx-x",
-  owner: process.env.NEXT_PUBLIC_BANK_OWNER ?? "บจก. ธัสเฮาส์",
+  name: process.env.NEXT_PUBLIC_BANK_NAME ?? "ธนาคารไทยพาณิชย์",
+  account: process.env.NEXT_PUBLIC_BANK_ACCOUNT ?? "415-188810-1",
+  owner: process.env.NEXT_PUBLIC_BANK_OWNER ?? "บริษัท ทัศน์เฮ้าส์ จำกัด",
 };
 
 export const SLIP_TYPES = ["image/png", "image/jpeg"];
