@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07050d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Prompt:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <title>รายละเอียดคอร์ส — Thushouse Academy</title>
+</head>
+<body>
+  <div id="site-header"></div>
+  <main class="container" id="app"></main>
+  <div id="site-footer"></div>
+  <script src="assets/courses.js"></script>
+  <script src="assets/layout.js"></script>
+  <script>
+    const c = COURSES.find((x) => x.id === new URLSearchParams(location.search).get("id"));
+    const app = document.getElementById("app");
+    if (!c) {
+      app.innerHTML = '<div class="page" style="text-align:center"><h1>ไม่พบคอร์สนี้</h1><a class="btn btn-primary" href="index.html#courses">กลับไปดูคอร์ส</a></div>';
+    } else {
+      document.title = c.title + " — Thushouse Academy";
+      const topics = c.curriculum.reduce((n, m) => n + m.items.length, 0);
+      app.innerHTML = `
+        <div class="detail">
+          <div>
+            <a class="back" href="index.html#courses">← คอร์สทั้งหมด</a><br /><br />
+            <span class="badge">${c.badge}</span>
+            <h1>${c.title}</h1>
+            <p class="accent" style="font-size:1.1rem;margin:0">${c.tagline}</p>
+            <div class="meta-row"><span>📚 ${c.lessons} บทเรียน</span><span>⏱ ${c.hours} ชั่วโมง</span><span>♾ เรียนซ้ำได้ตลอดชีพ</span></div>
+            <p>${c.short}</p>
+            <h2>สิ่งที่คุณจะได้เรียนรู้</h2>
+            <ul class="checks">${c.highlights.map((h) => `<li>${ICON.check}<span>${h}</span></li>`).join("")}</ul>
+            <h2>เนื้อหาในคอร์ส <span class="muted small">· ${c.curriculum.length} บท · ${topics} หัวข้อ</span></h2>
+            ${c.curriculum.map((m, i) => `
+              <details class="module" ${i === 0 ? "open" : ""}>
+                <summary><span>บทที่ ${i + 1} · ${m.title}</span><span class="muted small">${m.items.length} หัวข้อ</span></summary>
+                <ol>${m.items.map((it) => `<li>${it}</li>`).join("")}</ol>
+              </details>`).join("")}
+          </div>
+          <aside class="glass buy">
+            <div class="price nums">${baht(c.price)}</div>
+            <p class="emerald small" style="margin:0 0 18px">เรียนซ้ำได้ตลอดชีพ</p>
+            <a class="btn btn-primary btn-lg btn-block" href="checkout.html?id=${c.id}">สมัครเรียนเลย</a>
+            <button class="btn btn-ghost btn-block" style="margin-top:10px" onclick="openWheel()">🎁 หมุนรับส่วนลดก่อน</button>
+            <ul>
+              <li>${ICON.check}${c.lessons} บทเรียนวิดีโอ</li>
+              <li>${ICON.check}เข้ากลุ่มสมาชิก Thushouse</li>
+              <li>${ICON.check}เรียนได้ทุกอุปกรณ์</li>
+            </ul>
+            <p class="muted small" style="margin:18px 0 0">หรือเรียนทั้งสายด้วย <a class="accent" href="checkout.html?id=bundle">${BUNDLE.title}</a> เพียง ${baht(BUNDLE.price)}</p>
+          </aside>
+        </div>`;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#07050d" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&family=Prompt:wght@500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/style.css" />
+  <title>Thushouse Academy — บ้านแห่งการเรียนรู้การลงทุน</title>
+  <meta name="description" content="คอร์สเรียนลงทุนออนไลน์ Thushouse Academy เรียนอย่างเป็นระบบ จากประสบการณ์จริงในตลาด เรียนซ้ำได้ตลอดชีพ" />
+</head>
+<body>
+  <div id="site-header"></div>
+
+  <section class="hero">
+    <div class="container">
+      <button class="announce" onclick="openWheel()"><span class="dot"></span>เปิดรับผู้เรียนรอบใหม่ · หมุนวงล้อเพื่อรับส่วนลด →</button>
+      <h1>เรียนลงทุน<br /><span class="accent-text">อย่างเป็นระบบ</span></h1>
+      <p class="lead">คอร์สเรียนที่ออกแบบมาให้คุณเข้าใจตลาด วางแผนเป็น บริหารความเสี่ยงได้ และนำไปใช้ได้จริง จากประสบการณ์จริงในตลาด</p>
+      <div class="hero-cta">
+        <a href="#courses" class="btn btn-primary btn-lg">ดูคอร์สทั้งหมด</a>
+        <button class="btn btn-ghost btn-lg" onclick="openWheel()">🎁 หมุนรับส่วนลด</button>
+      </div>
+      <div class="hero-points" id="hero-points"></div>
+      <div class="stats" id="stats"></div>
+    </div>
+  </section>
+
+  <section id="courses">
+    <div class="container">
+      <div class="section-head">
+        <div class="divider"></div>
+        <h2>เลือกเส้นทางของคุณ</h2>
+        <p>หลักสูตรครอบคลุมตั้งแต่มือใหม่จนถึงมืออาชีพ ออกแบบให้ต่อเนื่องและใช้ได้จริง</p>
+      </div>
+      <div class="courses" id="course-list"></div>
+      <div class="glass bundle" id="bundle"></div>
+    </div>
+  </section>
+
+  <section id="why">
+    <div class="container">
+      <div class="section-head">
+        <div class="divider"></div>
+        <h2>เพราะการลงทุน<span class="accent-text">ไม่ใช่การเดา</span></h2>
+        <p>ทุกบทเรียนออกแบบจากประสบการณ์จริง เพื่อให้คุณตัดสินใจจากแผน ไม่ใช่อารมณ์</p>
+      </div>
+      <div class="why">
+        <div><div class="ic">◆</div><h3>เรียนจากระบบที่ใช้ได้จริง</h3><p>ตัวอย่างจริง วิธีคิด และ Template ที่นำไปปรับใช้กับพอร์ตของคุณได้ทันที</p></div>
+        <div><div class="ic">▶</div><h3>เรียนได้ตามจังหวะของตัวเอง</h3><p>วิดีโอคุณภาพ เข้าเรียนได้ตลอดชีพ ทบทวนซ้ำได้ทุกเมื่อ บนทุกอุปกรณ์</p></div>
+        <div><div class="ic">↻</div><h3>เนื้อหาอัปเดตตามภาวะตลาด</h3><p>อัปเดตตัวอย่างและ Case Study ให้สอดคล้องกับสถานการณ์จริงอยู่เสมอ</p></div>
+        <div><div class="ic">⌂</div><h3>บ้านของนักลงทุนที่เอาจริง</h3><p>เข้ากลุ่มสมาชิก Thushouse แชร์มุมมอง ถาม–ตอบ และเติบโตไปด้วยกัน</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="section-head">
+        <div class="divider"></div>
+        <h2>สมัครเรียน ง่ายใน 3 ขั้นตอน</h2>
+        <p>ไม่ต้องรอเปิดรอบ เลือกคอร์ส ชำระเงิน แล้วเริ่มเรียนได้หลังตรวจสอบการชำระเงิน</p>
+      </div>
+      <div class="steps">
+        <div class="glass step"><div class="num accent-text">01</div><h3>เลือกคอร์สที่เหมาะกับคุณ</h3><p>เริ่มที่ House Foundation หากยังไม่มีพื้นฐาน หรือ House Master เพื่อต่อยอดขั้นสูง</p></div>
+        <div class="glass step"><div class="num accent-text">02</div><h3>ชำระเงินและแนบสลิป</h3><p>โอนตามช่องทางที่กำหนด แล้วแนบสลิปเพื่อให้ทีมงานตรวจสอบ</p></div>
+        <div class="glass step"><div class="num accent-text">03</div><h3>รับสิทธิ์และเริ่มเรียน</h3><p>เมื่อตรวจสอบเรียบร้อย คุณจะได้รับสิทธิ์เข้าเรียนและเรียนซ้ำได้ตลอดชีพ</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="reviews">
+    <div class="container">
+      <div class="section-head">
+        <div class="divider"></div>
+        <h2>รีวิวจากผู้เรียนจริง</h2>
+      </div>
+      <div class="reviews" id="review-list"></div>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="container narrow">
+      <div class="section-head">
+        <div class="divider"></div>
+        <h2>ก่อนตัดสินใจสมัคร</h2>
+      </div>
+      <div class="faq" id="faq-list"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="container">
+      <div class="glass cta">
+        <h2>พร้อมเปลี่ยนจากการลองผิดลองถูก<br />เป็น<span class="accent-text">นักลงทุนที่มีระบบ</span>หรือยัง</h2>
+        <p>เริ่มจากพื้นฐาน เข้าใจตลาดจริง วางแผนการเทรดเป็น และบริหารความเสี่ยงได้อย่างมั่นใจ</p>
+        <div class="hero-cta" id="cta-buttons"></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="site-footer"></div>
+  <script src="assets/courses.js"></script>
+  <script src="assets/layout.js"></script>
+  <script>
+    const totalLessons = COURSES.reduce((s, c) => s + c.lessons, 0);
+    const totalHours = COURSES.reduce((s, c) => s + c.hours, 0);
+    document.getElementById("hero-points").innerHTML =
+      ["เรียนซ้ำได้ตลอดชีพ", "สอนจากประสบการณ์จริง", "มีกลุ่มสมาชิกให้ถาม–ตอบ"]
+        .map((t) => `<span>${ICON.check}${t}</span>`).join("");
+    document.getElementById("stats").innerHTML = [
+      [COURSES.length, "คอร์สครบสายลงทุน"],
+      ["500+", "นักเรียน"],            // TODO: ใส่ตัวเลขจริง
+      [totalHours + " ชม.", "วิดีโอเนื้อหา"],
+      ["ตลอดชีพ", "ดูได้ไม่จำกัด"],
+    ].map(([n, l]) => `<div><strong class="accent-text nums">${n}</strong><span>${l}</span></div>`).join("");
+
+    document.getElementById("course-list").innerHTML = COURSES.map(courseCard).join("");
+
+    const full = bundleFull(), save = full - BUNDLE.price;
+    document.getElementById("bundle").innerHTML = `
+      <div>
+        <span class="badge">Bundle · ดีลที่คุ้มที่สุด</span>
+        <h3>${BUNDLE.title}</h3>
+        <p class="muted" style="margin:0">${BUNDLE.desc}</p>
+        <div class="bundle-items">${COURSES.map((c) => `<span>✓ ${c.title}</span>`).join("")}</div>
+      </div>
+      <div class="bundle-price">
+        <div class="strike nums">${baht(full)}</div>
+        <div class="price nums">${baht(BUNDLE.price)}</div>
+        <div class="save">ประหยัด ${baht(save)} (${Math.round((save / full) * 100)}%)</div><br />
+        <a class="btn btn-primary btn-lg" href="checkout.html?id=bundle">คว้า Bundle เลย</a>
+      </div>`;
+
+    document.getElementById("review-list").innerHTML = REVIEWS.map((r) => `
+      <article class="glass review">
+        <div class="stars">${ICON.star.repeat(5)}</div>
+        <h4>${r.title}</h4>
+        <p>${r.body}</p>
+        <div class="review-foot"><span class="emerald">✓ ผู้เรียนที่ซื้อจริง</span><span class="muted">${r.course}</span></div>
+      </article>`).join("");
+
+    document.getElementById("faq-list").innerHTML = FAQS.map(([q, a]) =>
+      `<details><summary>${q}</summary><p>${a}</p></details>`).join("");
+
+    document.getElementById("cta-buttons").innerHTML =
+      `<a class="btn btn-primary btn-lg" href="course.html?id=${COURSES[0].id}">เริ่มที่ ${COURSES[0].title}</a>
+       <a class="btn btn-ghost btn-lg" href="course.html?id=${COURSES[1].id}">ดูคอร์ส ${COURSES[1].title}</a>`;
+  </script>
+</body>
+</html>
