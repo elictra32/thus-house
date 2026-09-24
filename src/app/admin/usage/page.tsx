@@ -1,6 +1,7 @@
 import PageHeader from "@/components/admin/PageHeader";
 import { requirePageAdmin } from "@/lib/auth";
 import { BREVO_FREE_PER_DAY, supabasePlan, vercelPlan } from "@/lib/usage-plans";
+import BackupButton from "./BackupButton";
 
 export const metadata = { title: "Usage & ค่าใช้จ่าย" };
 export const dynamic = "force-dynamic";
@@ -78,7 +79,7 @@ function Service({ name, plan, price, link, children }: { name: string; plan: st
 }
 
 export default async function UsagePage() {
-  const { service } = await requirePageAdmin("dashboard");
+  const { service, perms } = await requirePageAdmin("dashboard");
   const sp = supabasePlan();
   const vp = vercelPlan();
   const since = new Date(Date.now() - 30 * 86400_000).toISOString();
@@ -97,7 +98,8 @@ export default async function UsagePage() {
   if (u.db_bytes / sp.dbBytes >= 0.6 || u.storage_bytes / sp.storageBytes >= 0.6 || u.mau / sp.mau >= 0.6)
     alerts.push(`Supabase ใกล้เต็มแพ็กเกจ ${sp.label} — อัปเกรดเป็น Pro ($25/เดือน)`);
   if (vp.label === "Hobby") alerts.push("Vercel Hobby ไม่อนุญาตให้ใช้กับเว็บที่มีรายได้ — ควรอัปเกรดเป็น Pro ($20/เดือน) เมื่อเปิดขายจริง");
-  if (sp.label === "Free") alerts.push("Supabase Free ไม่มีสำรองข้อมูลอัตโนมัติ และหยุดโปรเจกต์ถ้าไม่มีคนใช้ ~1 สัปดาห์ — Pro มี backup รายวัน");
+  if (sp.label === "Free" && !process.env.DISCORD_BACKUP_WEBHOOK_URL)
+    alerts.push("Supabase Free ไม่มีสำรองข้อมูลอัตโนมัติ — ตั้ง DISCORD_BACKUP_WEBHOOK_URL เพื่อสำรองเข้า Discord ทุกวัน หรืออัปเกรด Pro");
 
   return (
     <>
@@ -154,6 +156,17 @@ export default async function UsagePage() {
           </p>
         </Service>
       </div>
+
+      <section className="card mt-6 space-y-3 p-6 text-sm leading-relaxed">
+        <h2 className="text-lg font-bold">สำรองข้อมูล</h2>
+        <p className="text-muted">
+          {process.env.DISCORD_BACKUP_WEBHOOK_URL
+            ? "ระบบส่งไฟล์สำรอง (สมาชิก การชำระเงิน คอร์ส บทเรียน ความคืบหน้า คอมเมนต์ ข้อความ ประวัติ Admin) เข้าห้อง Discord ส่วนตัวทุกวันราว 09:00 น."
+            : "ยังไม่ได้ตั้งค่า DISCORD_BACKUP_WEBHOOK_URL"}
+          {sp.label === "Free" ? " · Supabase Free ไม่มี backup ในตัว ไฟล์ใน Discord คือสำรองหลัก" : " · Supabase Pro มี backup รายวันในตัวอีกชั้น"}
+        </p>
+        {perms.has("roles") && process.env.DISCORD_BACKUP_WEBHOOK_URL && <BackupButton />}
+      </section>
 
       <section className="card mt-6 p-6 text-sm leading-relaxed">
         <h2 className="text-lg font-bold">ควรจ่ายเมื่อไร</h2>
