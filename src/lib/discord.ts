@@ -2,11 +2,15 @@ import "server-only";
 
 // แจ้งเตือนเข้า Discord ผ่าน Webhook (ตั้งค่า DISCORD_WEBHOOK_URL ใน Vercel)
 // ไม่ได้ตั้งค่า = ข้ามเงียบๆ · ส่งไม่สำเร็จไม่ทำให้งานหลักล้ม
-export type DiscordKind = "signup" | "payment" | "comment" | "message" | "security" | "info";
+export type DiscordKind = "signup" | "payment" | "approved" | "rejected" | "comment" | "message" | "security" | "usage" | "expiring" | "info";
 
 const STYLE: Record<DiscordKind, { color: number; icon: string }> = {
   signup: { color: 0x9195dc, icon: "🆕" },
   payment: { color: 0xec9e56, icon: "💰" },
+  approved: { color: 0x46a758, icon: "✅" },
+  rejected: { color: 0x8b8d98, icon: "❌" },
+  usage: { color: 0xe5484d, icon: "🔴" },
+  expiring: { color: 0xf5d90a, icon: "⏰" },
   comment: { color: 0xba94c7, icon: "💬" },
   message: { color: 0xe3a3a8, icon: "✉️" },
   security: { color: 0xe5484d, icon: "🚨" },

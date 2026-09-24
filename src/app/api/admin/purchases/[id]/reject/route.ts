@@ -1,10 +1,12 @@
 import { adminRoute, check, ok, readJson, must } from "@/lib/admin-route";
 import { jsonError, logAdmin } from "@/lib/auth";
 import { str } from "@/lib/validate";
+import { baht } from "@/lib/utils";
+import { notifyDiscord } from "@/lib/discord";
 
 export const POST = adminRoute<{ id: string }>("payments", async (req, { service, email }, { id }) => {
   const reason = str(await readJson(req), "reason", { required: true, max: 500 });
-  const { data: p } = await service.from("purchases").select("*, classes(name)").eq("id", id).maybeSingle();
+  const { data: p } = await service.from("purchases").select("*, classes(name), users(name, nickname, email)").eq("id", id).maybeSingle();
   if (!p) return jsonError("ไม่พบรายการ", 404);
   if (p.status !== "pending") return jsonError("ปฏิเสธได้เฉพาะรายการที่รอตรวจสอบ");
 
@@ -21,5 +23,17 @@ export const POST = adminRoute<{ id: string }>("payments", async (req, { service
     message: `คอร์ส ${p.classes?.name ?? ""}: ${reason} — แนบสลิปใหม่ได้ที่หน้าชำระเงิน`,
   });
   await logAdmin(service, email, "reject", "purchases", id, { reason });
+  await notifyDiscord(
+    "rejected",
+    "ปฏิเสธสลิป",
+    {
+      สมาชิก: `${p.users?.nickname || p.users?.name || "-"} (${p.users?.email ?? "-"})`,
+      คอร์ส: p.classes?.name,
+      ยอด: baht(p.amount),
+      เหตุผล: reason,
+      ปฏิเสธโดย: email,
+    },
+    `/admin/members/${p.user_id}`,
+  );
   return ok();
 });
