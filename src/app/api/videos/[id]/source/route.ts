@@ -5,6 +5,7 @@ import { getClassAccess } from "@/lib/class-access";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { adminEmails } from "@/lib/admin";
 import { driveEmbedUrl, youtubeId } from "@/lib/utils";
+import { notifyDiscord } from "@/lib/discord";
 
 // ลิงก์วิดีโอส่งให้ทีละบทเท่านั้น (ฐานข้อมูลไม่ให้สมาชิกอ่าน video_url ตรงๆ)
 // ทุกครั้งบันทึกลง video_access_logs · เปิดบทเรียนต่างกันเกิน LIMIT บทใน 1 ชม. = ผิดปกติ → พักการขอลิงก์ + แจ้ง Admin
@@ -68,6 +69,12 @@ async function alertAdmins(service: SupabaseClient, who: string, userId: string,
   ]);
   const ids = new Set([...(ownerRows ?? []), ...((staffRows ?? []) as { id: string }[])].map((r) => r.id));
   const title = "⚠️ พบการเปิดบทเรียนถี่ผิดปกติ";
+  await notifyDiscord(
+    "security",
+    "เปิดบทเรียนถี่ผิดปกติ — อาจกำลังดึงลิงก์คลิป",
+    { สมาชิก: who, "จำนวนบทใน 1 ชม.": count, IP: ip, สถานะ: "พักการขอลิงก์ชั่วคราวแล้ว" },
+    `/admin/members/${userId}`,
+  );
   const message = `${who} เปิดบทเรียนต่างกัน ${count} บทภายใน 1 ชั่วโมง ระบบพักการขอลิงก์ไว้ชั่วคราว — ดูประวัติที่ Admin → สมาชิก`;
   if (ids.size) {
     await service.from("notifications").insert(

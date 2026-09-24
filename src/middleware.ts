@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
 
-const PROTECTED = ["/dashboard", "/classes", "/payment", "/profile", "/admin"];
+const PROTECTED = ["/dashboard", "/classes", "/payment", "/profile", "/messages", "/admin"];
 
 // refresh session ของ Supabase ทุก request + กันหน้าที่ต้องล็อกอิน
 export async function middleware(request: NextRequest) {

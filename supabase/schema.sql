@@ -139,9 +139,9 @@ create table if not exists public.roles (
 insert into public.roles (id, name, description, permissions, is_system) values
   ('member', 'Member', 'สมาชิกทั่วไป เรียนคอร์สที่ซื้อได้', '{}', true),
   ('admin', 'Admin', 'ดูแลงานประจำวัน แต่เปลี่ยน Role ไม่ได้',
-    '{dashboard,payments,members,classes,live,email,content,logs}', true),
+    '{dashboard,payments,members,classes,live,email,content,logs,community}', true),
   ('head_admin', 'Head Admin', 'ทำได้ทุกอย่าง รวมถึงสร้าง Role และเปลี่ยน Role ของผู้อื่น',
-    '{dashboard,payments,members,classes,live,email,content,logs,roles}', true)
+    '{dashboard,payments,members,classes,live,email,content,logs,roles,community}', true)
 on conflict (id) do nothing;
 alter table public.roles enable row level security;
 -- ไม่มี policy = อ่าน/เขียนได้เฉพาะ API ฝั่ง server (service role)
@@ -319,3 +319,54 @@ create index if not exists video_access_logs_user_time on public.video_access_lo
 create index if not exists video_access_logs_time on public.video_access_logs (created_at desc);
 alter table public.video_access_logs enable row level security;
 revoke all on public.video_access_logs from anon, authenticated;
+
+-- ---------- คอมเมนต์ใต้คลิป / กดไลก์ / ข้อความถึงผู้สอน ----------
+-- เข้าถึงผ่าน API (service role) เท่านั้น — API ตรวจสิทธิ์เข้าเรียนเอง
+create table if not exists public.lesson_comments (
+  id uuid primary key default gen_random_uuid(),
+  video_id uuid not null references public.videos(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  parent_id uuid references public.lesson_comments(id) on delete cascade, -- ตอบกลับ (ชั้นเดียว)
+  body text not null check (char_length(body) between 1 and 2000),
+  created_at timestamptz not null default now()
+);
+create index if not exists lesson_comments_video on public.lesson_comments (video_id, created_at);
+create index if not exists lesson_comments_parent on public.lesson_comments (parent_id);
+
+create table if not exists public.lesson_comment_likes (
+  comment_id uuid not null references public.lesson_comments(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (comment_id, user_id)
+);
+
+create table if not exists public.video_likes (
+  video_id uuid not null references public.videos(id) on delete cascade,
+  user_id uuid not null references public.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (video_id, user_id)
+);
+
+create table if not exists public.instructor_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.users(id) on delete cascade,
+  class_id uuid references public.classes(id) on delete set null,
+  body text not null check (char_length(body) between 1 and 4000),
+  status text not null default 'new' check (status in ('new', 'read', 'replied')),
+  reply text,
+  replied_by text,
+  replied_at timestamptz,
+  created_at timestamptz not null default now()
+);
+create index if not exists instructor_messages_user on public.instructor_messages (user_id, created_at desc);
+create index if not exists instructor_messages_status on public.instructor_messages (status, created_at desc);
+
+alter table public.lesson_comments enable row level security;
+alter table public.lesson_comment_likes enable row level security;
+alter table public.video_likes enable row level security;
+alter table public.instructor_messages enable row level security;
+revoke all on public.lesson_comments, public.lesson_comment_likes, public.video_likes, public.instructor_messages from anon, authenticated;
+
+-- สิทธิ์ community (ตอบ/ลบคอมเมนต์ + ตอบข้อความถึงผู้สอน) ให้ Role ระบบเดิม
+update public.roles set permissions = array_append(permissions, 'community')
+where id in ('admin', 'head_admin') and not ('community' = any(permissions));

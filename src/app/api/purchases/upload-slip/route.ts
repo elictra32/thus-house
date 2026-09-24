@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireApiUser, jsonError } from "@/lib/auth";
 import { createServiceSupabase } from "@/lib/supabase-server";
-import { SLIP_MAX_BYTES, SLIP_TYPES, isActivePurchase } from "@/lib/utils";
+import { SLIP_MAX_BYTES, SLIP_TYPES, baht, isActivePurchase } from "@/lib/utils";
+import { notifyDiscord } from "@/lib/discord";
 
 // ตรวจ magic bytes ว่าเป็น PNG/JPEG จริง ไม่ใช่แค่นามสกุล
 function sniffImage(buf: Uint8Array): "png" | "jpg" | null {
@@ -61,5 +62,6 @@ export async function POST(req: Request) {
     message: `สลิปคอร์ส ${cls.name} อยู่ระหว่างรอตรวจสอบ`,
   });
 
+  await notifyDiscord("payment", "มีสลิปโอนเงินรอตรวจสอบ", { คอร์ส: cls.name, ยอด: baht(cls.price), สมาชิก: auth.user.email }, "/admin/payments");
   return NextResponse.json({ purchase });
 }

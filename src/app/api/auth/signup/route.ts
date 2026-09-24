@@ -4,6 +4,7 @@ import { createServerSupabase, createServiceSupabase } from "@/lib/supabase-serv
 import { jsonError } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { isEmailDeliveryError, unconfirmedUserIds } from "@/lib/email-confirm";
+import { notifyDiscord } from "@/lib/discord";
 
 export async function POST(req: Request) {
   const { name: rawName, nickname: rawNick, phone: rawPhone, email: rawEmail, password } = await req.json().catch(() => ({}));
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
     }
   }
 
+  await notifyDiscord("signup", "สมาชิกสมัครใหม่", { ชื่อ: name, ชื่อเล่น: nickname, เบอร์: phone, อีเมล: email }, "/admin/members");
   return NextResponse.json({ needsConfirmation: !data.session, pendingAdmin: false });
 }
 
@@ -76,5 +78,11 @@ async function createPendingUser(service: SupabaseClient, profile: Profile, emai
   await service
     .from("users")
     .upsert({ id: data.user.id, email, ...profile }, { onConflict: "id", ignoreDuplicates: true });
+  await notifyDiscord(
+    "signup",
+    "สมาชิกสมัครใหม่ (รอ Admin ยืนยันอีเมล)",
+    { ชื่อ: profile.name, ชื่อเล่น: profile.nickname, เบอร์: profile.phone, อีเมล: email },
+    "/admin/members?status=unconfirmed",
+  );
   return NextResponse.json({ needsConfirmation: true, pendingAdmin: true });
 }
