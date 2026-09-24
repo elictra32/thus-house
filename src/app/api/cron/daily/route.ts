@@ -3,12 +3,15 @@ import { createServiceSupabase } from "@/lib/supabase-server";
 import { notifyDiscord } from "@/lib/discord";
 import { supabasePlan } from "@/lib/usage-plans";
 import { formatDate } from "@/lib/utils";
+import { runBackup } from "@/lib/backup";
 
 // งานประจำวัน (Vercel Cron ทุกวัน ~09:00 น. — ดู vercel.json)
 // 1) Usage ใกล้เต็ม (80%+) → Discord
 // 2) สิทธิ์สมาชิกเหลือ 30 / 7 / 1 วัน → Discord + แจ้งเตือนสมาชิกในเว็บ
+// 3) สำรองข้อมูลสำคัญส่งเข้าห้อง Discord ส่วนตัว (ดู lib/backup.ts)
 // ผลพลอยได้: มีคนเรียกฐานข้อมูลทุกวัน → Supabase Free ไม่หยุดโปรเจกต์เพราะไม่มีการใช้งาน
 export const dynamic = "force-dynamic";
+export const maxDuration = 60;
 
 const DAY = 86400_000;
 const MARKS = [30, 7, 1];
@@ -90,6 +93,13 @@ export async function GET(req: Request) {
     });
   }
   report.expiring = due.length;
+
+  // ---------- 3) สำรองข้อมูล ----------
+  const backup = await runBackup("cron");
+  report.backup = backup.ok ? `${backup.bytes} bytes` : backup.error;
+  if (!backup.ok && process.env.DISCORD_BACKUP_WEBHOOK_URL) {
+    await notifyDiscord("security", "สำรองข้อมูลประจำวันไม่สำเร็จ", { สาเหตุ: backup.error }, "/admin/usage");
+  }
 
   return NextResponse.json({ ok: true, ...report });
 }
