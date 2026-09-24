@@ -29,7 +29,7 @@ export default function FeedbackGallery({ items }: { items: GalleryItem[] }) {
           <button
             key={item.id}
             onClick={() => setOpen(i)}
-            className="mb-5 block w-full overflow-hidden rounded-2xl border border-charcoal/10 bg-white/50 shadow-[0_20px_50px_-30px_#2d183c88] transition hover:-translate-y-1 hover:shadow-[0_30px_60px_-30px_#2d183caa]"
+            className="mb-5 block w-full overflow-hidden rounded-2xl border border-charcoal/10 bg-white/50 dark:bg-white/5 shadow-[0_20px_50px_-30px_#2d183c88] transition hover:-translate-y-1 hover:shadow-[0_30px_60px_-30px_#2d183caa]"
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={item.image_url} alt={item.caption ?? "Feedback จากสมาชิก THUS"} loading="lazy" className="w-full" />

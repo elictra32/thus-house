@@ -4,6 +4,7 @@ import { ButtonLink } from "./Button";
 import NotificationBell from "./NotificationBell";
 import LogoutButton from "./LogoutButton";
 import MobileMenu from "./MobileMenu";
+import ThemeToggle from "./ThemeToggle";
 import { getAuthUser, getPermissions } from "@/lib/auth";
 import { supabaseConfigured } from "@/lib/admin";
 
@@ -35,14 +36,15 @@ export default async function Navbar({ light = false }: { light?: boolean }) {
       }
     >
       <Logo href={user ? "/dashboard" : "/"} tone={light ? "light" : "dark"} height={34} />
-      <div className={`hidden gap-7 text-sm md:flex ${light ? "font-semibold text-plum-700" : "text-muted"}`}>
+      <div className={`hidden gap-7 text-sm md:flex ${light ? "font-semibold text-accent-muted" : "text-muted"}`}>
         {links.map((l) => (
-          <Link key={l.href} href={l.href} className={light ? "hover:text-plum-900" : "hover:text-white"}>
+          <Link key={l.href} href={l.href} className={light ? "hover:text-accent" : "hover:text-white"}>
             {l.label}
           </Link>
         ))}
       </div>
       <div className="flex items-center gap-2">
+        {light && <ThemeToggle />}
         {user ? (
           <>
             <NotificationBell />
