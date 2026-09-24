@@ -203,10 +203,15 @@ export default async function Landing() {
         <p className="mt-4 text-lg text-charcoal/70">เรียนจากตลาดจริง ไปพร้อมกัน 1 ปีเต็ม</p>
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {highlights.map((h, i) => (
-            <div key={h.title} className="rounded-2xl border border-charcoal/10 bg-paper-light p-6 transition hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-25px_#2d183c66]">
-              <div className="text-sm font-extrabold text-accent-soft">{String(i + 1).padStart(2, "0")}</div>
-              <h3 className="mt-3 text-xl font-bold text-accent">{h.title}</h3>
-              <p className="mt-2 leading-relaxed text-charcoal/75">{h.body}</p>
+            <div
+              key={h.title}
+              className="rounded-[28px] bg-gradient-to-b from-paper-light to-paper-light/30 p-7 shadow-[0_24px_60px_-36px_rgba(20,10,30,0.55)] ring-1 ring-inset ring-charcoal/[0.05] transition duration-300 hover:-translate-y-1 hover:shadow-[0_34px_70px_-30px_rgba(45,24,60,0.6)]"
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-soft/15 text-sm font-extrabold text-accent-soft">
+                {String(i + 1).padStart(2, "0")}
+              </div>
+              <h3 className="mt-5 text-xl font-bold text-accent">{h.title}</h3>
+              <p className="mt-2 leading-relaxed text-charcoal/70">{h.body}</p>
             </div>
           ))}
         </div>
@@ -223,7 +228,7 @@ export default async function Landing() {
           <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-6xl">สิทธิประโยชน์สมาชิก</h2>
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {benefits.map((b) => (
-              <div key={b.title} className="rounded-2xl border border-white/10 bg-white/[.06] p-7 backdrop-blur">
+              <div key={b.title} className="rounded-[30px] bg-gradient-to-b from-white/[.10] to-white/[.02] p-8 shadow-[0_30px_70px_-40px_#000] ring-1 ring-inset ring-white/[0.06] backdrop-blur">
                 <div className="text-5xl font-extrabold text-white/15">{b.no}</div>
                 <h3 className="mt-2 text-2xl font-extrabold tracking-[-0.5px]">{b.title}</h3>
                 <ul className="mt-5 space-y-3">
