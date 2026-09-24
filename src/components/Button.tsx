@@ -2,11 +2,13 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import LoadingSpinner from "./LoadingSpinner";
 
-type Variant = "primary" | "purple" | "ghost" | "outline" | "danger";
+type Variant = "primary" | "purple" | "plum" | "paper" | "ghost" | "outline" | "danger";
 
 const styles: Record<Variant, string> = {
   primary: "bg-white text-bg hover:bg-white/90",
   purple: "bg-brand text-white hover:bg-brand-dark",
+  plum: "bg-plum-900 text-white hover:bg-plum-700",
+  paper: "border border-charcoal/15 bg-white/60 text-charcoal hover:border-charcoal/40",
   ghost: "bg-raised text-ink border border-edge hover:border-muted/60",
   outline: "border border-brand text-brand-light hover:bg-brand/10",
   danger: "bg-danger text-white hover:bg-red-700",

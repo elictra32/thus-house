@@ -53,8 +53,8 @@ export default function VideoPlayer({
   const pct = watched ? 100 : Math.min(100, Math.round((elapsed / Math.max(1, video.duration_seconds)) * 100));
 
   return (
-    <div className="rounded-[20px] border border-edge bg-[#13161d] p-4 shadow-[0_25px_80px_#0008]">
-      <div className="relative aspect-video overflow-hidden rounded-[14px] bg-gradient-to-br from-[#251943] to-[#171a24]">
+    <div className="rounded-[20px] border border-edge bg-[#1b1422] p-4 shadow-[0_25px_80px_#0008]">
+      <div className="relative aspect-video overflow-hidden rounded-[14px] bg-gradient-to-br from-[#3a2449] to-[#1d1624]">
         <iframe
           src={driveEmbedUrl(video.video_url)}
           title={video.title}
@@ -69,7 +69,7 @@ export default function VideoPlayer({
         <div className="h-[7px] overflow-hidden rounded-full bg-edge">
           <i className="block h-full bg-brand transition-all" style={{ width: `${pct}%` }} />
         </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-[#8e94a3]">
+        <div className="mt-2 flex items-center justify-between text-xs text-[#aaa0b3]">
           <span>
             {watched
               ? "✓ ดูบทนี้แล้ว"

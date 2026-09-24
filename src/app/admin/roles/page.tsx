@@ -124,7 +124,7 @@ export default function RolesPage() {
                     checked={form.permissions.includes(p.key)}
                     disabled={locked}
                     onChange={() => toggle(p.key)}
-                    className="h-4 w-4 accent-[#8b5cf6]"
+                    className="h-4 w-4 accent-[#7a5f96]"
                   />
                   {p.label}
                 </label>

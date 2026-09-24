@@ -34,7 +34,7 @@ export default async function AdminDashboard() {
 
   return (
     <>
-      <PageHeader title="Admin Dashboard" subtitle="ภาพรวมของ Thushouse" />
+      <PageHeader title="Admin Dashboard" subtitle="ภาพรวมของ THUS House" />
       {banner}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         <StatCard label="สมาชิกทั้งหมด" value={a.totals.users.toLocaleString()} />
