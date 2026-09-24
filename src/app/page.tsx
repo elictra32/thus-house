@@ -157,7 +157,7 @@ export default async function Landing() {
             </p>
             </div>
 
-            <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
+            <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
               <ButtonLink href="/signup" variant="plum" className="h-12 px-6 text-base">
                 สมัคร THUS Member →
               </ButtonLink>
