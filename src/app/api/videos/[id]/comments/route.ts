@@ -4,14 +4,8 @@ import { adminEmails } from "@/lib/admin";
 import { displayName, isCommunityStaff, videoAccess } from "@/lib/community";
 import { notifyDiscord } from "@/lib/discord";
 
-type Row = {
-  id: string;
-  parent_id: string | null;
-  body: string;
-  created_at: string;
-  user_id: string;
-  users: { nickname: string | null; name: string | null; email: string; role: string } | null;
-};
+type Row = { id: string; parent_id: string | null; body: string; created_at: string; user_id: string };
+type Author = { id: string; nickname: string | null; name: string | null; email: string; role: string };
 
 // รายการคอมเมนต์ของบทเรียน + จำนวนไลก์ (เฉพาะผู้มีสิทธิ์เรียนคอร์สนี้)
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
@@ -21,18 +15,28 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!video) return jsonError("ไม่พบวิดีโอ", 404);
   if (!ok) return jsonError("ไม่มีสิทธิ์เข้าถึงคอร์สนี้", 403);
 
-  const [{ data: rows }, { data: vlikes }, { data: roles }] = await Promise.all([
+  const [{ data: rows, error: rowsError }, { data: vlikes }, { data: roles }] = await Promise.all([
     service
       .from("lesson_comments")
-      .select("id, parent_id, body, created_at, user_id, users(nickname, name, email, role)")
+      .select("id, parent_id, body, created_at, user_id")
       .eq("video_id", video.id)
       .order("created_at", { ascending: true })
       .limit(500),
     service.from("video_likes").select("user_id").eq("video_id", video.id),
     service.from("roles").select("id, permissions"),
   ]);
-  const comments = (rows ?? []) as unknown as Row[];
+  if (rowsError) {
+    console.error("lesson_comments load failed", rowsError.message);
+    return jsonError("โหลดคอมเมนต์ไม่สำเร็จ กรุณาลองใหม่", 500);
+  }
+  const comments = (rows ?? []) as Row[];
   const ids = comments.map((c) => c.id);
+  // ดึงข้อมูลผู้เขียนแยก (ไม่ใช้ embed ของ PostgREST — ถ้า schema cache ไม่เห็น relationship คอมเมนต์จะหายทั้งหมด)
+  const authorIds = Array.from(new Set(comments.map((c) => c.user_id)));
+  const { data: authorRows } = authorIds.length
+    ? await service.from("users").select("id, nickname, name, email, role").in("id", authorIds)
+    : { data: [] as Author[] };
+  const authors = new Map(((authorRows ?? []) as Author[]).map((a) => [a.id, a]));
   const { data: likes } = ids.length
     ? await service.from("lesson_comment_likes").select("comment_id, user_id").in("comment_id", ids)
     : { data: [] as { comment_id: string; user_id: string }[] };
@@ -49,14 +53,15 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       liked: !!vlikes?.some((l) => l.user_id === me),
     },
     comments: comments.map((c) => {
+      const u = authors.get(c.user_id) ?? null;
       const cl = (likes ?? []).filter((l) => l.comment_id === c.id);
       return {
         id: c.id,
         parentId: c.parent_id,
         body: c.body,
         createdAt: c.created_at,
-        author: displayName(c.users),
-        staff: !!c.users && (staffRoles.has(c.users.role) || owners.includes(c.users.email.toLowerCase())),
+        author: displayName(u),
+        staff: !!u && (staffRoles.has(u.role) || owners.includes(u.email.toLowerCase())),
         mine: c.user_id === me,
         likes: cl.length,
         liked: cl.some((l) => l.user_id === me),

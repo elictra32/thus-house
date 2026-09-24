@@ -37,3 +37,5 @@
 ## เครื่องมือใน sandbox
 - `pkill -f "<pattern>"` / `grep [x]yz` ใน loop kill อาจฆ่า shell ตัวเอง (command line มีคำเดียวกัน) → ใช้ `pgrep` แล้ว kill ตาม PID ในคำสั่งแยก
 - server เก่าที่ยังรันอยู่จะเสิร์ฟ build เก่า (CSS หาย) → ฆ่าก่อน start ใหม่
+- PostgREST embed `from("A").select("..., users(...)")` พังเงียบๆ (PGRST201 ambiguous) เมื่อมีตารางเชื่อม (junction) ที่มี FK ไปทั้ง A และ users เช่น `lesson_comment_likes` → data = null ทั้งก้อน · ดึงผู้ใช้แยกด้วย `.in("id", ids)` และเช็ก `error` ทุกครั้ง
+- React: element พี่น้องที่ `key` ซ้ำกัน (เช่น `<VideoPlayer key={id}/>` + `<Comments key={id}/>`) → ตัวเก่าไม่ถูกถอด วิดีโอซ้อน/สถานะค้าง — ใช้ prefix ต่างกัน
