@@ -2,14 +2,14 @@
 import { useState } from "react";
 import VideoPlayer from "@/components/VideoPlayer";
 import VideoList from "@/components/VideoList";
-import type { Video } from "@/types/database";
+import type { LessonVideo } from "@/types/database";
 
 export default function LessonView({
   videos,
   initialWatched,
   initialVideoId,
 }: {
-  videos: Video[];
+  videos: LessonVideo[];
   initialWatched: string[];
   initialVideoId?: string;
 }) {

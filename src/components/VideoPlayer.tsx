@@ -1,9 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { api } from "@/lib/api-client";
-import { driveEmbedUrl, formatDuration, youtubeId } from "@/lib/utils";
+import { formatDuration } from "@/lib/utils";
 import YouTubeLesson from "./YouTubeLesson";
-import type { Video } from "@/types/database";
+import type { LessonVideo } from "@/types/database";
+
+type Source = { kind: "youtube"; id: string } | { kind: "drive"; src: string };
 
 const THRESHOLD = 0.8;
 
@@ -16,7 +18,7 @@ export default function VideoPlayer({
   watched,
   onWatched,
 }: {
-  video: Video;
+  video: LessonVideo;
   watched: boolean;
   onWatched: () => void;
 }) {
@@ -27,7 +29,10 @@ export default function VideoPlayer({
   const frameRef = useRef<HTMLDivElement>(null);
   const marked = useRef(watched);
   const target = Math.max(1, Math.floor(video.duration_seconds * THRESHOLD));
-  const ytId = youtubeId(video.video_url);
+  // ขอลิงก์วิดีโอทีละบทจาก API (ตรวจสิทธิ์ + บันทึก + จำกัดจำนวน)
+  const [source, setSource] = useState<Source | null>(null);
+  const [sourceError, setSourceError] = useState("");
+  const ytId = source?.kind === "youtube" ? source.id : null;
   const [isNativeFull, setIsNativeFull] = useState(false);
 
   async function markWatched() {
@@ -45,13 +50,24 @@ export default function VideoPlayer({
   }
 
   useEffect(() => {
-    if (ytId || watched || !video.duration_seconds) return;
+    let cancelled = false;
+    api
+      .get<Source>(`/api/videos/${video.id}/source`)
+      .then((s) => !cancelled && setSource(s))
+      .catch((e) => !cancelled && setSourceError((e as Error).message));
+    return () => {
+      cancelled = true;
+    };
+  }, [video.id]);
+
+  useEffect(() => {
+    if (source?.kind !== "drive" || watched || !video.duration_seconds) return;
     const t = setInterval(() => {
       // hasFocus() ยังเป็น true เมื่อโฟกัสอยู่ใน iframe วิดีโอ แต่เป็น false เมื่อสลับไปแอป/หน้าต่างอื่น
       if (document.visibilityState === "visible" && document.hasFocus()) setElapsed((s) => s + 1);
     }, 1000);
     return () => clearInterval(t);
-  }, [ytId, watched, video.duration_seconds]);
+  }, [source, watched, video.duration_seconds]);
 
   useEffect(() => {
     if (!watched && video.duration_seconds && elapsed >= target) markWatched();
@@ -111,7 +127,15 @@ export default function VideoPlayer({
             : "relative aspect-video overflow-hidden rounded-[14px] bg-gradient-to-br from-[#3a2449] to-[#1d1624] [&:fullscreen]:rounded-none [&:fullscreen]:bg-black"
         }
       >
-        {ytId ? (
+        {sourceError ? (
+          <div className="absolute inset-0 flex items-center justify-center p-6 text-center text-sm leading-relaxed text-white/80">
+            {sourceError}
+          </div>
+        ) : !source ? (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <span className="h-8 w-8 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
+          </div>
+        ) : ytId ? (
           <YouTubeLesson
             key={ytId}
             videoId={ytId}
@@ -122,7 +146,7 @@ export default function VideoPlayer({
         ) : (
           <>
             <iframe
-              src={driveEmbedUrl(video.video_url)}
+              src={source.kind === "drive" ? source.src : undefined}
               title={video.title}
               className="absolute inset-0 h-full w-full"
               allow="autoplay; fullscreen"
