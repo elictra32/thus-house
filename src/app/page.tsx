@@ -1,3 +1,4 @@
+import { Fragment } from "react";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -13,11 +14,12 @@ export const dynamic = "force-dynamic";
 // วิดีโอแนะนำบนหน้าแรก (YouTube) — แสดงปกก่อน ผู้ชมกดเล่นเอง
 const INTRO_VIDEO_ID = "fQoh2I0_89w";
 
+// label แบ่งเป็นท่อน — ขึ้นบรรทัดใหม่ได้เฉพาะระหว่างท่อน (ภาษาไทยไม่ถูกตัดกลางคำบนมือถือ)
 const stats = [
-  { value: "1 ปีเต็ม", label: "พัฒนาไปพร้อมกันอย่างเป็นระบบ" },
-  { value: "ทุกวันพุธ", label: "เรียนสด 20:30 – 22:30 น." },
-  { value: "20", label: "บทเรียน Class ปรับพื้นฐาน" },
-  { value: "200+", label: "วิดีโอย้อนหลังตั้งแต่รุ่น 1" },
+  { value: "1 ปีเต็ม", label: ["พัฒนาไปพร้อมกัน", "อย่างเป็นระบบ"] },
+  { value: "ทุกวันพุธ", label: ["เรียนสด", "20:30 – 22:30 น."] },
+  { value: "20", label: ["บทเรียน", "Class ปรับพื้นฐาน"] },
+  { value: "200+", label: ["วิดีโอย้อนหลัง", "ตั้งแต่รุ่น 1"] },
 ];
 
 const highlights = [
@@ -95,50 +97,71 @@ export default async function Landing() {
       <Navbar light />
 
       {/* ---------- Hero ---------- */}
-      <header className="relative overflow-hidden px-[6vw] pb-20 pt-14 md:pt-20">
+      <header className="relative overflow-hidden px-5 pb-16 pt-10 sm:px-[6vw] md:pb-20 md:pt-16 lg:pt-20">
         <Glow className="-left-32 top-10 h-[420px] w-[300px] rotate-12 bg-glow-lilac/60" />
         <Glow className="right-[-120px] top-[-60px] h-[460px] w-[420px] bg-glow-orange/45" />
         <Glow className="bottom-[-160px] left-1/3 h-[380px] w-[520px] bg-glow-pink/40" />
 
-        <div className="relative grid items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
-          <div>
-            <p className="text-xs font-bold tracking-[3px] text-plum-700">THUS HOUSE OF TRADERS</p>
-            <h1 className="mt-4 text-[64px] font-extrabold uppercase leading-[0.9] tracking-[-2px] text-charcoal sm:text-[88px] xl:text-[108px]">
+        <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-16">
+          <div className="max-w-[580px]">
+            <p className="flex items-center gap-3 text-[11px] font-bold tracking-[0.32em] text-plum-700 sm:text-xs">
+              <span aria-hidden className="h-px w-8 bg-plum-700/40" />
+              THUS HOUSE OF TRADERS
+            </p>
+
+            <h1 className="mt-5 text-[clamp(3.6rem,12vw,6rem)] font-extrabold uppercase leading-[0.86] xl:text-[7rem] tracking-[-0.04em] text-charcoal">
               THUS
               <br />
               Member
             </h1>
-            <p className="mt-5 bg-gradient-to-r from-plum-700 via-[#b0619a] to-glow-orange bg-clip-text text-2xl font-extrabold italic tracking-[-0.5px] text-transparent md:text-3xl">
+
+            <p className="mt-5 w-fit bg-gradient-to-r from-plum-700 via-[#a45c95] to-glow-orange bg-clip-text pb-1 text-[clamp(1.4rem,3.6vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-transparent">
               Winners Average Winners
             </p>
-            <p className="mt-5 max-w-[560px] text-lg leading-[1.75] text-charcoal/80">
-              หลักสูตรที่ออกแบบมาเพื่อพัฒนาเทรดเดอร์ตั้งแต่ระดับพื้นฐาน ไปจนถึงการต่อยอดสู่การเป็นมืออาชีพ
-              ภายในระยะเวลา <b className="text-plum-900">1 ปีเต็ม</b> — เน้นทั้ง <b className="text-plum-900">&quot;ทักษะการเทรดจริง&quot;</b>{" "}
-              และ <b className="text-plum-900">&quot;กระบวนการคิดแบบมืออาชีพ&quot;</b>
-            </p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <ButtonLink href="/signup" variant="plum" className="px-6 py-3.5 text-base">
+
+            <div className="mt-6 space-y-3 text-[17px] leading-[1.85] text-charcoal/75 [text-wrap:pretty] sm:text-lg">
+              <p>
+                หลักสูตรที่ออกแบบมาเพื่อพัฒนาเทรดเดอร์ ตั้งแต่ระดับพื้นฐานไปจนถึงการต่อยอดสู่การเป็นมืออาชีพ{" "}
+                <span className="whitespace-nowrap">
+                  ภายในระยะเวลา <b className="font-bold text-plum-900">1 ปีเต็ม</b>
+                </span>
+              </p>
+              <p>
+                เน้นทั้ง <b className="whitespace-nowrap font-bold text-plum-900">“ทักษะการเทรดจริง”</b> และ{" "}
+                <b className="whitespace-nowrap font-bold text-plum-900">“กระบวนการคิดแบบมืออาชีพ”</b>
+              </p>
+            </div>
+
+            <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
+              <ButtonLink href="/signup" variant="plum" className="h-12 px-6 text-base">
                 สมัคร THUS Member →
               </ButtonLink>
-              <ButtonLink href="#benefits" variant="paper" className="px-6 py-3.5 text-base">
+              <ButtonLink href="#benefits" variant="paper" className="h-12 px-6 text-base">
                 ดูสิทธิประโยชน์
               </ButtonLink>
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[22px] border border-white/70 bg-white/40 p-2 shadow-[0_30px_80px_-20px_#2d183c55] backdrop-blur">
-            <div className="relative aspect-video overflow-hidden rounded-[16px] bg-plum-900">
+          <div className="overflow-hidden rounded-[20px] border border-white/70 bg-white/40 p-1.5 shadow-[0_30px_80px_-20px_#2d183c55] backdrop-blur sm:rounded-[24px] sm:p-2">
+            <div className="relative aspect-video overflow-hidden rounded-[15px] bg-plum-900 sm:rounded-[18px]">
               <YouTubeLite id={INTRO_VIDEO_ID} title="THUS House of Traders" />
             </div>
           </div>
         </div>
 
         {/* ตัวเลขสรุป */}
-        <div className="relative mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-charcoal/10 bg-charcoal/10 lg:grid-cols-4">
+        <div className="relative mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-charcoal/10 bg-charcoal/10 md:mt-16 lg:grid-cols-4">
           {stats.map((s) => (
-            <div key={s.label} className="bg-paper-light/90 p-6">
-              <div className="text-3xl font-extrabold tracking-[-1px] text-plum-900 md:text-4xl">{s.value}</div>
-              <div className="mt-1 text-sm text-charcoal/70">{s.label}</div>
+            <div key={s.value} className="bg-paper-light/90 px-5 py-5 sm:px-6 sm:py-6">
+              <div className="text-[26px] font-extrabold leading-none tracking-[-0.03em] text-plum-900 sm:text-3xl lg:text-4xl">{s.value}</div>
+              <div className="mt-2.5 text-[13px] leading-snug text-charcoal/65 sm:text-sm">
+                {s.label.map((part, i) => (
+                  <Fragment key={part}>
+                    {i > 0 && " "}
+                    <span className="whitespace-nowrap">{part}</span>
+                  </Fragment>
+                ))}
+              </div>
             </div>
           ))}
         </div>
