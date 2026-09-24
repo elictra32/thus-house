@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { ButtonLink } from "@/components/Button";
 import { requirePageUser } from "@/lib/auth";
 import { getClassAccess } from "@/lib/class-access";
-import { baht } from "@/lib/utils";
+import { baht, formatDate } from "@/lib/utils";
 import LessonView from "./LessonView";
 import type { Class } from "@/types/database";
 
@@ -32,6 +32,7 @@ export default async function ClassPage({ params, searchParams }: { params: { id
             <span>▶ {cls.videos_count} บทเรียน</span>
             <span>⏱ {cls.duration_hours} ชั่วโมง</span>
             <span>💳 {baht(cls.price)}</span>
+            {access.hasAccess && access.expiresAt && <span>📅 เรียนได้ถึง {formatDate(access.expiresAt)}</span>}
           </div>
         </div>
       </div>
@@ -55,6 +56,12 @@ export default async function ClassPage({ params, searchParams }: { params: { id
               <h2 className="mt-4 text-xl font-bold">รอตรวจสอบการชำระเงิน</h2>
               <p className="mt-2 text-sm text-muted">ทีมงานกำลังตรวจสอบสลิปของคุณ เมื่ออนุมัติแล้วจะมีการแจ้งเตือน</p>
               <ButtonLink href="/profile" variant="ghost" className="mt-6">ดูสถานะ</ButtonLink>
+            </>
+          ) : access.expired ? (
+            <>
+              <h2 className="mt-4 text-xl font-bold">สิทธิ์เรียนหมดอายุแล้ว</h2>
+              <p className="mt-2 text-sm text-muted">หมดอายุเมื่อ {formatDate(access.expired)} · ต่ออายุเพื่อกลับมาเรียนต่อ</p>
+              <ButtonLink href={`/payment?class=${cls.id}`} className="mt-6">ต่ออายุ · {baht(cls.price)}</ButtonLink>
             </>
           ) : (
             <>

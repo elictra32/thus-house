@@ -106,10 +106,11 @@ npm run dev                  # http://localhost:3000
 | GET | `/api/admin/users?q=&status=&page=` | ค้นหา/กรอง/แบ่งหน้า (20 ต่อหน้า) |
 | GET / PUT / DELETE | `/api/admin/users/[id]` | รายละเอียด (+ การซื้อ, จำนวนที่ดูต่อคอร์ส) / แก้ `status,name,phone` / ลบ |
 | GET | `/api/admin/purchases?status=pending\|approved\|rejected\|all` | พร้อม signed URL ของสลิป (อายุ 1 ชม.) |
-| POST | `/api/admin/purchases/[id]/approve` | อนุมัติ + แจ้งเตือนสมาชิก |
+| POST | `/api/admin/purchases/[id]/approve` | `{ access_days? }` อนุมัติ + ตั้งวันหมดอายุ (ไม่ส่ง = ค่าเริ่มต้นของคอร์ส, `null` = ไม่หมดอายุ) + แจ้งเตือนสมาชิก |
+| PUT | `/api/admin/purchases/[id]` | `{ expires_at: "YYYY-MM-DD" \| null }` แก้วันหมดอายุสิทธิ์เรียน |
 | POST | `/api/admin/purchases/[id]/reject` | `{ reason }` ปฏิเสธ + แจ้งเตือนสมาชิก |
 | GET | `/api/admin/analytics` | ตัวเลขทั้งหมดของ Dashboard/Analytics |
-| GET / POST | `/api/admin/classes` | รายการ / สร้าง `{ name, price, description?, instructor?, category?, thumbnail_url? }` |
+| GET / POST | `/api/admin/classes` | รายการ / สร้าง `{ name, price, description?, instructor?, category?, thumbnail_url?, access_days? }` |
 | PUT / DELETE | `/api/admin/classes/[id]` | แก้ไข / ลบ |
 | POST | `/api/admin/upload-thumbnail` | FormData `file` → `{ url }` |
 | GET / POST | `/api/admin/videos?classId=` | รายการ / เพิ่ม `{ class_id, title, video_url, duration_seconds, description? }` |

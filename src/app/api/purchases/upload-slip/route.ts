@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiUser, jsonError } from "@/lib/auth";
 import { createServiceSupabase } from "@/lib/supabase-server";
-import { SLIP_MAX_BYTES, SLIP_TYPES } from "@/lib/utils";
+import { SLIP_MAX_BYTES, SLIP_TYPES, isActivePurchase } from "@/lib/utils";
 
 // ตรวจ magic bytes ว่าเป็น PNG/JPEG จริง ไม่ใช่แค่นามสกุล
 function sniffImage(buf: Uint8Array): "png" | "jpg" | null {
@@ -31,9 +31,10 @@ export async function POST(req: Request) {
   if (!cls) return jsonError("ไม่พบคอร์ส", 404);
 
   const { data: existing } = await service
-    .from("purchases").select("status").eq("user_id", auth.user.id).eq("class_id", classId)
+    .from("purchases").select("status, expires_at").eq("user_id", auth.user.id).eq("class_id", classId)
     .in("status", ["pending", "approved"]);
-  if (existing?.some((p) => p.status === "approved")) return jsonError("คุณมีสิทธิ์เรียนคอร์สนี้อยู่แล้ว");
+  // สิทธิ์ที่หมดอายุแล้วซื้อใหม่ (ต่ออายุ) ได้
+  if (existing?.some((p) => isActivePurchase(p))) return jsonError("คุณมีสิทธิ์เรียนคอร์สนี้อยู่แล้ว");
   if (existing?.some((p) => p.status === "pending")) return jsonError("มีสลิปของคอร์สนี้รอตรวจสอบอยู่แล้ว");
 
   const path = `${auth.user.id}/${crypto.randomUUID()}.${ext}`;

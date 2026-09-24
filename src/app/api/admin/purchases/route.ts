@@ -4,7 +4,7 @@ export const GET = adminRoute(async (req, { service }) => {
   const status = new URL(req.url).searchParams.get("status");
   let q = service
     .from("purchases")
-    .select("*, classes(id, name), users(id, name, email)")
+    .select("*, classes(id, name, access_days), users(id, name, email)")
     .order("created_at", { ascending: status === "pending" })
     .limit(200);
   if (status && status !== "all") q = q.eq("status", status);

@@ -16,6 +16,10 @@ export function classFields(b: Record<string, unknown>, creating: boolean) {
     ["category", () => str(b, "category", { max: 50 })],
     ["price", () => num(b, "price", { required: true, min: 0 })],
     ["thumbnail_url", () => url(b, "thumbnail_url")],
+    ["access_days", () => {
+      const n = num(b, "access_days", { min: 1 });
+      return n === null ? null : Math.round(n);
+    }],
   ], creating);
 }
 
