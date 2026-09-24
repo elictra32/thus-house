@@ -30,6 +30,8 @@ create table if not exists public.classes (
 alter table public.classes add column if not exists description text;
 alter table public.classes add column if not exists thumbnail_url text;
 alter table public.classes add column if not exists category text;
+-- อายุสมาชิกเริ่มต้นของคอร์ส (วัน) · null = ไม่หมดอายุ
+alter table public.classes add column if not exists access_days int;
 
 create table if not exists public.purchases (
   id uuid primary key default gen_random_uuid(),
@@ -43,6 +45,8 @@ create table if not exists public.purchases (
   created_at timestamptz not null default now()
 );
 alter table public.purchases add column if not exists rejection_reason text;
+-- วันหมดสิทธิ์เรียน · null = ไม่หมดอายุ
+alter table public.purchases add column if not exists expires_at timestamptz;
 
 create table if not exists public.videos (
   id uuid primary key default gen_random_uuid(),
@@ -163,11 +167,12 @@ begin
   end loop;
 end $$;
 
--- เดิม unique(user_id, class_id) ทำให้ส่งสลิปใหม่หลังถูกปฏิเสธไม่ได้
--- → จำกัดแค่ห้ามมี pending/approved ซ้ำในคอร์สเดียวกัน
+-- เดิม unique(user_id, class_id) ทำให้ส่งสลิปใหม่หลังถูกปฏิเสธ/ต่ออายุไม่ได้
+-- → จำกัดแค่ห้ามมีสลิปรอตรวจ (pending) ซ้ำในคอร์สเดียวกัน
 alter table public.purchases drop constraint if exists purchases_user_id_class_id_key;
-create unique index if not exists purchases_one_active_idx
-  on public.purchases(user_id, class_id) where status in ('pending', 'approved');
+drop index if exists public.purchases_one_active_idx;
+create unique index if not exists purchases_one_pending_idx
+  on public.purchases(user_id, class_id) where status = 'pending';
 
 -- policy รุ่นเดิม: ให้ผู้ใช้แก้ status ตัวเอง / สร้าง purchase ที่อนุมัติแล้วเองได้ → ลบทิ้ง
 drop policy if exists "Users can update own profile" on public.users;
@@ -206,12 +211,13 @@ create policy "classes: public read" on public.classes for select using (true);
 drop policy if exists "purchases: read own" on public.purchases;
 create policy "purchases: read own" on public.purchases for select using (auth.uid() = user_id);
 
--- ดูรายการวิดีโอได้เฉพาะคอร์สที่ซื้อและได้รับอนุมัติแล้ว
+-- ดูรายการวิดีโอได้เฉพาะคอร์สที่ซื้อ ได้รับอนุมัติ และยังไม่หมดอายุ
 drop policy if exists "videos: purchased only" on public.videos;
 create policy "videos: purchased only" on public.videos for select using (
   exists (
     select 1 from public.purchases p
     where p.class_id = videos.class_id and p.user_id = auth.uid() and p.status = 'approved'
+      and (p.expires_at is null or p.expires_at > now())
   )
 );
 

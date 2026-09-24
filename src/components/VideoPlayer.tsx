@@ -6,8 +6,8 @@ import type { Video } from "@/types/database";
 
 const THRESHOLD = 0.8;
 
-// Google Drive player เป็น iframe ข้ามโดเมน อ่านเวลาเล่นจริงไม่ได้
-// จึงนับเวลาที่เปิดบทเรียนนี้ค้างไว้ (เฉพาะตอนแท็บเปิดอยู่) แล้ว mark ว่าดูแล้วเมื่อถึง 80% ของความยาววิดีโอ
+// Google Drive player เป็น iframe ข้ามโดเมน อ่านเวลาเล่นจริงหรือรู้ว่ากดหยุดไม่ได้
+// จึงนับเวลาที่เปิดบทเรียนนี้ค้างไว้ (เฉพาะตอนแท็บ/หน้าต่างนี้ใช้งานอยู่) แล้ว mark ว่าดูแล้วเมื่อถึง 80% ของความยาววิดีโอ
 export default function VideoPlayer({
   video,
   watched,
@@ -39,7 +39,8 @@ export default function VideoPlayer({
   useEffect(() => {
     if (watched || !video.duration_seconds) return;
     const t = setInterval(() => {
-      if (document.visibilityState === "visible") setElapsed((s) => s + 1);
+      // hasFocus() ยังเป็น true เมื่อโฟกัสอยู่ใน iframe วิดีโอ แต่เป็น false เมื่อสลับไปแอป/หน้าต่างอื่น
+      if (document.visibilityState === "visible" && document.hasFocus()) setElapsed((s) => s + 1);
     }, 1000);
     return () => clearInterval(t);
   }, [watched, video.duration_seconds]);
@@ -61,6 +62,8 @@ export default function VideoPlayer({
           allow="autoplay; fullscreen"
           allowFullScreen
         />
+        {/* บังปุ่ม "เปิดในหน้าต่างใหม่" มุมขวาบนของ Drive ไม่ให้กดออกไปที่ลิงก์ Drive ตรงๆ */}
+        <div className="absolute right-0 top-0 z-10 h-16 w-16" onContextMenu={(e) => e.preventDefault()} aria-hidden />
       </div>
       <div className="mt-4">
         <div className="h-[7px] overflow-hidden rounded-full bg-edge">
@@ -70,7 +73,7 @@ export default function VideoPlayer({
           <span>
             {watched
               ? "✓ ดูบทนี้แล้ว"
-              : `${formatDuration(Math.min(elapsed, video.duration_seconds))} / ${formatDuration(video.duration_seconds)}`}
+              : `เวลาที่เปิดบทเรียน ${formatDuration(Math.min(elapsed, video.duration_seconds))} / ${formatDuration(video.duration_seconds)}`}
           </span>
           {!watched && (
             <button onClick={markWatched} disabled={saving} className="font-semibold text-brand-light hover:underline disabled:opacity-50">

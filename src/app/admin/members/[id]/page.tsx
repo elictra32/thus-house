@@ -10,7 +10,7 @@ import StatusBadge from "@/components/StatusBadge";
 import { PageLoading } from "@/components/LoadingSpinner";
 import { api } from "@/lib/api-client";
 import { useApi } from "@/lib/use-api";
-import { baht, formatDate } from "@/lib/utils";
+import { baht, formatDate, isActivePurchase, toBangkokDate } from "@/lib/utils";
 import type { Purchase, User } from "@/types/database";
 
 type Detail = {
@@ -21,7 +21,7 @@ type Detail = {
 
 export default function MemberDetail({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const { data, error, loading, setData } = useApi<Detail>(`/api/admin/users/${params.id}`);
+  const { data, error, loading, setData, reload } = useApi<Detail>(`/api/admin/users/${params.id}`);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -87,8 +87,8 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
 
         <div className="card overflow-x-auto">
           <h3 className="p-5 font-bold">การซื้อและความคืบหน้า</h3>
-          <table className="w-full min-w-[560px]">
-            <thead><tr><th className="th">คอร์ส</th><th className="th">ยอด</th><th className="th">วันที่</th><th className="th">สถานะ</th><th className="th">ดูแล้ว</th></tr></thead>
+          <table className="w-full min-w-[720px]">
+            <thead><tr><th className="th">คอร์ส</th><th className="th">ยอด</th><th className="th">วันที่</th><th className="th">สถานะ</th><th className="th">ดูแล้ว</th><th className="th">เรียนได้ถึง</th></tr></thead>
             <tbody>
               {purchases.map((p) => (
                 <tr key={p.id}>
@@ -101,9 +101,12 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
                       ? `${watchedByClass[p.class_id] ?? 0} / ${p.classes.videos_count}`
                       : "-"}
                   </td>
+                  <td className="td">
+                    {p.status === "approved" ? <ExpiryEditor key={p.expires_at ?? "none"} purchaseId={p.id} expiresAt={p.expires_at} onSaved={reload} /> : "-"}
+                  </td>
                 </tr>
               ))}
-              {!purchases.length && <tr><td className="td text-muted" colSpan={5}>ยังไม่มีการซื้อ</td></tr>}
+              {!purchases.length && <tr><td className="td text-muted" colSpan={6}>ยังไม่มีการซื้อ</td></tr>}
             </tbody>
           </table>
         </div>
@@ -127,6 +130,47 @@ function Row({ label, value }: { label: string; value: string }) {
     <div>
       <p className="text-xs text-muted">{label}</p>
       <p className="break-words">{value}</p>
+    </div>
+  );
+}
+
+// แก้วันหมดอายุสิทธิ์เรียนของการซื้อแต่ละรายการ (ว่าง = ไม่หมดอายุ)
+function ExpiryEditor({ purchaseId, expiresAt, onSaved }: { purchaseId: string; expiresAt: string | null; onSaved: () => void }) {
+  const [value, setValue] = useState(toBangkokDate(expiresAt));
+  const [saving, setSaving] = useState(false);
+  const [err, setErr] = useState("");
+  const dirty = value !== toBangkokDate(expiresAt);
+  const expired = !isActivePurchase({ status: "approved", expires_at: expiresAt });
+
+  async function save() {
+    setSaving(true);
+    setErr("");
+    try {
+      await api.put(`/api/admin/purchases/${purchaseId}`, { expires_at: value || null });
+      onSaved();
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="min-w-[190px]">
+      <div className="flex items-center gap-2">
+        <input
+          type="date"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          className="rounded-lg border border-edge bg-raised px-2 py-1 text-sm [color-scheme:dark]"
+        />
+        {dirty && <Button size="sm" loading={saving} onClick={save}>บันทึก</Button>}
+      </div>
+      <p className={`mt-1 text-xs ${expired ? "text-red-300" : "text-subtle"}`}>
+        {!expiresAt ? "ไม่หมดอายุ" : expired ? "หมดอายุแล้ว" : "ยังใช้งานได้"}
+        {value && " · ลบวันที่ = ไม่หมดอายุ"}
+      </p>
+      {err && <p className="mt-1 text-xs text-red-300">{err}</p>}
     </div>
   );
 }

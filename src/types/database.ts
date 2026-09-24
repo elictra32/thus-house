@@ -24,6 +24,7 @@ export interface Class {
   videos_count: number;
   duration_hours: number;
   thumbnail_url: string | null;
+  access_days: number | null; // อายุสมาชิกเริ่มต้น (วัน) · null = ไม่หมดอายุ
   created_at: string;
 }
 
@@ -37,6 +38,7 @@ export interface Purchase {
   rejection_reason: string | null;
   approved_by: string | null;
   approved_at: string | null;
+  expires_at: string | null; // วันหมดสิทธิ์เรียน · null = ไม่หมดอายุ
   created_at: string;
 }
 
@@ -91,6 +93,6 @@ export interface AdminLog {
 }
 
 export type PurchaseWithRelations = Purchase & {
-  classes: Pick<Class, "id" | "name"> | null;
+  classes: Pick<Class, "id" | "name" | "access_days"> | null;
   users: Pick<User, "id" | "name" | "email"> | null;
 };

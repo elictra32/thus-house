@@ -35,6 +35,21 @@ export const BANK = {
   owner: process.env.NEXT_PUBLIC_BANK_OWNER ?? "บริษัท ทัศน์เฮ้าส์ จำกัด",
 };
 
+// สิทธิ์เรียนยังใช้ได้: อนุมัติแล้ว และยังไม่หมดอายุ (expires_at ว่าง = ไม่มีวันหมดอายุ)
+export function isActivePurchase(p: { status: string; expires_at?: string | null }, now = Date.now()) {
+  return p.status === "approved" && (!p.expires_at || new Date(p.expires_at).getTime() > now);
+}
+
+export function addDays(days: number, from = new Date()) {
+  return new Date(from.getTime() + days * 86_400_000).toISOString();
+}
+
+// ISO → "YYYY-MM-DD" ตามเวลาไทย (ใช้กับ <input type="date">)
+export function toBangkokDate(iso: string | null | undefined) {
+  if (!iso) return "";
+  return new Date(iso).toLocaleDateString("en-CA", { timeZone: "Asia/Bangkok" });
+}
+
 export const SLIP_TYPES = ["image/png", "image/jpeg"];
 export const SLIP_MAX_BYTES = 4 * 1024 * 1024; // Vercel จำกัด request body ~4.5MB
 

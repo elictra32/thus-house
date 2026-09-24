@@ -3,7 +3,7 @@ import ClassCard from "@/components/ClassCard";
 import { ButtonLink } from "@/components/Button";
 import StatusBadge from "@/components/StatusBadge";
 import { requirePageUser } from "@/lib/auth";
-import { formatDate } from "@/lib/utils";
+import { formatDate, isActivePurchase } from "@/lib/utils";
 import type { Class, LiveClass, Purchase } from "@/types/database";
 
 export const metadata = { title: "Dashboard" };
@@ -20,7 +20,18 @@ export default async function Dashboard() {
 
   const all = (classes ?? []) as Class[];
   const buys = (purchases ?? []) as Purchase[];
-  const approved = new Set(buys.filter((p) => p.status === "approved").map((p) => p.class_id));
+  const current = buys.filter((p) => isActivePurchase(p));
+  const approved = new Set(current.map((p) => p.class_id));
+  // เคยซื้อแต่หมดอายุแล้ว → แสดงปุ่มต่ออายุ
+  const expired = new Set(buys.filter((p) => p.status === "approved" && !approved.has(p.class_id)).map((p) => p.class_id));
+  // วันหมดอายุของแต่ละคอร์ส (ไม่มีใน map = ไม่หมดอายุ)
+  const expiresOf = new Map<string, string>();
+  for (const p of current) {
+    if (!p.expires_at) continue;
+    if (current.some((q) => q.class_id === p.class_id && !q.expires_at)) continue;
+    const prev = expiresOf.get(p.class_id);
+    if (!prev || p.expires_at > prev) expiresOf.set(p.class_id, p.expires_at);
+  }
   const pending = new Set(buys.filter((p) => p.status === "pending").map((p) => p.class_id));
 
   const watchedByClass = new Map<string, number>();
@@ -71,7 +82,14 @@ export default async function Dashboard() {
                 index={i}
                 href={`/classes/${c.id}`}
                 progress={progressOf(c)}
-                action={<ButtonLink href={`/classes/${c.id}`} className="w-full">Continue Learning →</ButtonLink>}
+                action={
+                  <>
+                    <ButtonLink href={`/classes/${c.id}`} className="w-full">Continue Learning →</ButtonLink>
+                    {expiresOf.has(c.id) && (
+                      <p className="mt-2 text-center text-xs text-subtle">เรียนได้ถึง {formatDate(expiresOf.get(c.id))}</p>
+                    )}
+                  </>
+                }
               />
             ))}
           </div>
@@ -121,7 +139,7 @@ export default async function Dashboard() {
                     </div>
                   ) : (
                     <ButtonLink href={`/payment?class=${c.id}`} variant="ghost" className="w-full">
-                      Buy Class
+                      {expired.has(c.id) ? "หมดอายุแล้ว · ต่ออายุ" : "Buy Class"}
                     </ButtonLink>
                   )
                 }

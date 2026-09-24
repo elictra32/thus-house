@@ -41,6 +41,7 @@ export default async function ProfilePage() {
                   <th className="th">ยอด</th>
                   <th className="th">วันที่</th>
                   <th className="th">สถานะ</th>
+                  <th className="th">เรียนได้ถึง</th>
                 </tr>
               </thead>
               <tbody>
@@ -54,6 +55,9 @@ export default async function ProfilePage() {
                       {p.status === "rejected" && p.rejection_reason && (
                         <p className="mt-1 text-xs text-red-300">{p.rejection_reason}</p>
                       )}
+                    </td>
+                    <td className="td text-muted">
+                      {p.status !== "approved" ? "-" : p.expires_at ? formatDate(p.expires_at) : "ไม่หมดอายุ"}
                     </td>
                   </tr>
                 ))}

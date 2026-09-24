@@ -3,7 +3,7 @@ import { useState } from "react";
 import PageHeader, { ErrorBox } from "@/components/admin/PageHeader";
 import Button from "@/components/Button";
 import Modal from "@/components/Modal";
-import { Textarea } from "@/components/Input";
+import Input, { Textarea } from "@/components/Input";
 import StatusBadge from "@/components/StatusBadge";
 import { PageLoading } from "@/components/LoadingSpinner";
 import { api } from "@/lib/api-client";
@@ -25,6 +25,7 @@ export default function PaymentsPage() {
   const [selected, setSelected] = useState<Row | null>(null);
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
+  const [days, setDays] = useState("");
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState("");
 
@@ -32,16 +33,21 @@ export default function PaymentsPage() {
     setSelected(row);
     setRejecting(false);
     setReason("");
+    setDays(row.classes?.access_days ? String(row.classes.access_days) : "");
     setActionError("");
   }
 
   async function act(kind: "approve" | "reject") {
     if (!selected) return;
     if (kind === "reject" && !reason.trim()) return setActionError("กรุณาระบุเหตุผล");
+    if (kind === "approve" && days !== "" && !(Number(days) >= 1)) return setActionError("อายุสมาชิกต้องเป็นจำนวนวันตั้งแต่ 1 ขึ้นไป");
     setBusy(true);
     setActionError("");
     try {
-      await api.post(`/api/admin/purchases/${selected.id}/${kind}`, kind === "reject" ? { reason } : undefined);
+      await api.post(
+        `/api/admin/purchases/${selected.id}/${kind}`,
+        kind === "reject" ? { reason } : { access_days: days === "" ? null : Number(days) },
+      );
       setSelected(null);
       reload();
     } catch (err) {
@@ -130,6 +136,27 @@ export default function PaymentsPage() {
                 <Info label="ดำเนินการโดย" value={`${selected.approved_by} · ${formatDate(selected.approved_at, true)}`} />
               )}
               {selected.rejection_reason && <Info label="เหตุผลที่ปฏิเสธ" value={selected.rejection_reason} />}
+              {selected.status === "approved" && (
+                <Info label="เรียนได้ถึง" value={selected.expires_at ? formatDate(selected.expires_at) : "ไม่หมดอายุ"} />
+              )}
+              {selected.status !== "approved" && !rejecting && (
+                <div className="border-t border-line pt-4">
+                  <Input
+                    label="อายุสมาชิก (วัน)"
+                    name="access_days"
+                    type="number"
+                    min={1}
+                    placeholder="ว่าง = ไม่หมดอายุ"
+                    value={days}
+                    onChange={(e) => setDays(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-subtle">
+                    {days && Number(days) >= 1
+                      ? `เรียนได้ถึง ${formatDate(new Date(Date.now() + Number(days) * 86_400_000).toISOString())}`
+                      : "ไม่หมดอายุ"}
+                  </p>
+                </div>
+              )}
 
               {selected.status === "pending" && (
                 <div className="space-y-2 border-t border-line pt-4">

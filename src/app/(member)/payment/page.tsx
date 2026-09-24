@@ -1,4 +1,5 @@
 import { requirePageUser } from "@/lib/auth";
+import { isActivePurchase } from "@/lib/utils";
 import PaymentForm from "./PaymentForm";
 import type { Class } from "@/types/database";
 
@@ -8,10 +9,10 @@ export default async function PaymentPage({ searchParams }: { searchParams: { cl
   const { supabase, user } = await requirePageUser();
   const [{ data: classes }, { data: purchases }] = await Promise.all([
     supabase.from("classes").select("*").order("created_at"),
-    supabase.from("purchases").select("class_id, status").eq("user_id", user.id).in("status", ["pending", "approved"]),
+    supabase.from("purchases").select("class_id, status, expires_at").eq("user_id", user.id).in("status", ["pending", "approved"]),
   ]);
-  // ซ่อนคอร์สที่ซื้อแล้ว หรือมีสลิปรอตรวจอยู่
-  const taken = new Set((purchases ?? []).map((p) => p.class_id));
+  // ซ่อนคอร์สที่ยังมีสิทธิ์เรียนอยู่ หรือมีสลิปรอตรวจอยู่ (หมดอายุแล้วซื้อต่อได้)
+  const taken = new Set((purchases ?? []).filter((p) => p.status === "pending" || isActivePurchase(p)).map((p) => p.class_id));
   const payable = ((classes ?? []) as Class[]).filter((c) => !taken.has(c.id));
 
   return (
