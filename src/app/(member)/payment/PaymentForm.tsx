@@ -137,7 +137,7 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
         <Button type="submit" loading={loading} className="mt-6 w-full">
           ยืนยันการชำระเงิน
         </Button>
-        <p className="mt-3 text-xs text-subtle">หลังอนุมัติ เรียนได้ตลอดชีพ</p>
+        <p className="mt-3 text-xs text-subtle">หลังอนุมัติ เรียนได้ตลอดอายุสมาชิก</p>
         <p className="mt-2 text-xs font-bold text-red-300">สงวนสิทธิ์ในการคืนเงินทุกกรณี</p>
       </aside>
     </form>
