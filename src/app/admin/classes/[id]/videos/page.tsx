@@ -46,7 +46,7 @@ export default function VideosAdmin({ params }: { params: { id: string } }) {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!form.title.trim()) return setFormError("กรุณากรอกชื่อบทเรียน");
-    if (!/^https?:\/\//.test(form.video_url)) return setFormError("กรุณาใส่ลิงก์ Google Drive ให้ถูกต้อง");
+    if (!/^https?:\/\//.test(form.video_url)) return setFormError("กรุณาใส่ลิงก์ YouTube หรือ Google Drive ให้ถูกต้อง");
     const duration_seconds = (Number(form.minutes) || 0) * 60 + (Number(form.seconds) || 0);
     const body = { title: form.title, description: form.description, video_url: form.video_url, duration_seconds };
     setSaving(true);
@@ -151,9 +151,9 @@ export default function VideosAdmin({ params }: { params: { id: string } }) {
           <Input label="ชื่อบทเรียน *" name="title" value={form.title} onChange={set("title")} />
           <Textarea label="คำอธิบาย" name="description" rows={3} value={form.description} onChange={set("description")} />
           <Input
-            label="ลิงก์ Google Drive *"
+            label="ลิงก์วิดีโอ (YouTube หรือ Google Drive) *"
             name="video_url"
-            placeholder="https://drive.google.com/file/d/.../view"
+            placeholder="https://youtu.be/... หรือ https://drive.google.com/file/d/.../view"
             value={form.video_url}
             onChange={set("video_url")}
           />
@@ -161,7 +161,11 @@ export default function VideosAdmin({ params }: { params: { id: string } }) {
             <Input label="ความยาว (นาที)" name="minutes" type="number" min={0} value={form.minutes} onChange={set("minutes")} />
             <Input label="วินาที" name="seconds" type="number" min={0} max={59} value={form.seconds} onChange={set("seconds")} />
           </div>
-          <p className="text-xs text-subtle">ไฟล์ใน Drive ต้องแชร์เป็น &quot;ทุกคนที่มีลิงก์ดูได้&quot; ถึงจะเล่นบนเว็บได้</p>
+          <p className="text-xs leading-relaxed text-subtle">
+            YouTube: ตั้งคลิปเป็น <b>&quot;ไม่เป็นสาธารณะ (Unlisted)&quot;</b> — คลิปแบบ &quot;ส่วนตัว (Private)&quot; YouTube ไม่ให้เล่นบนเว็บอื่น
+            <br />
+            Google Drive: แชร์ไฟล์เป็น &quot;ทุกคนที่มีลิงก์ดูได้&quot;
+          </p>
           {formError && <ErrorBox message={formError} />}
           <Button type="submit" loading={saving} className="w-full">บันทึก</Button>
         </form>

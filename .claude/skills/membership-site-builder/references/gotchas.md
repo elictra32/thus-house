@@ -21,6 +21,8 @@
 - ค่า DNS มาตรฐานจากความจำอาจล้าสมัย → ดูจากหน้า Vercel
 
 ## วิดีโอ
+- YouTube **Private ฝังบนเว็บอื่นไม่ได้เลย** (ขึ้น Video unavailable) → ต้องใช้ **Unlisted** · เว็บใช้ IFrame API `controls=0` + ชั้นบังทับทั้ง iframe + ปุ่มควบคุมของเว็บเอง (`YouTubeLesson.tsx`) กันกดออกไป YouTube
+- iPhone อาจไม่ยอมให้ `playVideo()` จากปุ่มของเว็บในครั้งแรก → fallback เปิดช่องกลางให้แตะปุ่มเล่นของ YouTube
 - Google Drive iframe: บอกสถานะเล่น/หยุดไม่ได้, ป้องกันลิงก์หลุดไม่ได้จริง (บังปุ่ม pop-out ได้แค่คนทั่วไป)
 - iPhone ไม่รองรับ Fullscreen API กับ element ทั่วไป → fallback ขยายกรอบ `fixed inset-0` โดยไม่ remount iframe
 - `document.hasFocus()` ยังเป็น true เมื่อโฟกัสอยู่ใน iframe ลูก → ใช้หยุดนับเวลาเมื่อสลับแอปได้
