@@ -1,5 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
+import Button from "@/components/Button";
+import { api } from "@/lib/api-client";
 import Link from "next/link";
 import PageHeader, { ErrorBox } from "@/components/admin/PageHeader";
 import Input, { Select } from "@/components/Input";
@@ -9,10 +11,13 @@ import { useApi } from "@/lib/use-api";
 import { formatDate } from "@/lib/utils";
 import type { User } from "@/types/database";
 
-export default function MembersPage() {
+type Row = User & { email_confirmed: boolean };
+
+export default function MembersPage({ searchParams }: { searchParams: { status?: string } }) {
   const [q, setQ] = useState("");
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState(searchParams.status ?? "");
+  const [confirming, setConfirming] = useState("");
   const [page, setPage] = useState(1);
 
   // หน่วงการค้นหา 300ms ระหว่างพิมพ์
@@ -22,7 +27,19 @@ export default function MembersPage() {
   }, [q]);
 
   const params = new URLSearchParams({ page: String(page), ...(search && { q: search }), ...(status && { status }) });
-  const { data, error, loading } = useApi<{ users: User[]; total: number; pageSize: number }>(`/api/admin/users?${params}`);
+  const { data, error, loading, reload } = useApi<{ users: Row[]; total: number; pageSize: number; unconfirmedCount: number }>(
+    `/api/admin/users?${params}`,
+  );
+
+  async function confirmEmail(id: string) {
+    setConfirming(id);
+    try {
+      await api.post(`/api/admin/users/${id}/confirm-email`);
+      reload();
+    } finally {
+      setConfirming("");
+    }
+  }
   const pages = data ? Math.max(1, Math.ceil(data.total / data.pageSize)) : 1;
 
   return (
@@ -35,8 +52,17 @@ export default function MembersPage() {
           <option value="active">ใช้งาน</option>
           <option value="inactive">ไม่ใช้งาน</option>
           <option value="suspended">ระงับ</option>
+          <option value="unconfirmed">รอยืนยันอีเมล</option>
         </Select>
       </div>
+      {!!data?.unconfirmedCount && status !== "unconfirmed" && (
+        <button
+          onClick={() => { setStatus("unconfirmed"); setPage(1); }}
+          className="mb-5 block w-full rounded-xl border border-warning/30 bg-warning/10 p-3 text-left text-sm text-amber-200"
+        >
+          มีสมาชิกรอยืนยันอีเมล {data.unconfirmedCount} คน — คลิกเพื่อดู
+        </button>
+      )}
       {error && <ErrorBox message={error} />}
       {loading && !data ? (
         <PageLoading />
@@ -52,7 +78,17 @@ export default function MembersPage() {
                   <td className="td font-medium">{u.name || "-"}</td>
                   <td className="td text-muted">{u.email}</td>
                   <td className="td text-muted">{u.phone || "-"}</td>
-                  <td className="td"><StatusBadge status={u.status} /></td>
+                  <td className="td">
+                    <StatusBadge status={u.status} />
+                    {!u.email_confirmed && (
+                      <div className="mt-1 flex items-center gap-2 text-xs text-amber-300">
+                        รอยืนยันอีเมล
+                        <Button size="sm" variant="outline" loading={confirming === u.id} onClick={() => confirmEmail(u.id)}>
+                          ยืนยัน
+                        </Button>
+                      </div>
+                    )}
+                  </td>
                   <td className="td text-muted">{formatDate(u.created_at)}</td>
                   <td className="td text-right"><Link href={`/admin/members/${u.id}`} className="text-brand-light hover:underline">ดูรายละเอียด →</Link></td>
                 </tr>

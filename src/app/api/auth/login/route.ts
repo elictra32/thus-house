@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase-server";
 import { jsonError } from "@/lib/auth";
 
+const NOT_CONFIRMED = "บัญชียังไม่ได้ยืนยันอีเมล — กดลิงก์ยืนยันในอีเมล หรือรอทีมงานยืนยันบัญชีให้";
+
 export async function POST(req: Request) {
   const { email, password } = await req.json().catch(() => ({}));
   if (!email || !password) return jsonError("กรุณากรอกอีเมลและรหัสผ่าน");
@@ -9,8 +11,13 @@ export async function POST(req: Request) {
   const supabase = createServerSupabase();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error || !data.user) {
-    const msg = /confirm/i.test(error?.message ?? "") ? "กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ" : "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
+    const msg = /confirm/i.test(error?.message ?? "") ? NOT_CONFIRMED : "อีเมลหรือรหัสผ่านไม่ถูกต้อง";
     return jsonError(msg, 401);
+  }
+  // บัญชีที่สมัครตอนส่งอีเมลยืนยันไม่ได้ ต้องรอ Admin ยืนยันก่อน (ไม่ขึ้นกับการตั้งค่า Confirm email ของ Supabase)
+  if (!data.user.email_confirmed_at) {
+    await supabase.auth.signOut();
+    return jsonError(NOT_CONFIRMED, 403);
   }
 
   const service = createServiceSupabase();

@@ -103,8 +103,9 @@ npm run dev                  # http://localhost:3000
 
 | Method | Path | คำอธิบาย |
 |---|---|---|
-| GET | `/api/admin/users?q=&status=&page=` | ค้นหา/กรอง/แบ่งหน้า (20 ต่อหน้า) |
+| GET | `/api/admin/users?q=&status=&page=` | ค้นหา/กรอง/แบ่งหน้า (20 ต่อหน้า) · `status=unconfirmed` = รอยืนยันอีเมล |
 | GET / PUT / DELETE | `/api/admin/users/[id]` | รายละเอียด (+ การซื้อ, จำนวนที่ดูต่อคอร์ส) / แก้ `status,name,phone` / ลบ |
+| POST | `/api/admin/users/[id]/confirm-email` | ยืนยันอีเมลแทนสมาชิก (บัญชีที่สมัครตอนส่งอีเมลยืนยันไม่ได้) |
 | GET | `/api/admin/purchases?status=pending\|approved\|rejected\|all` | พร้อม signed URL ของสลิป (อายุ 1 ชม.) |
 | POST | `/api/admin/purchases/[id]/approve` | `{ access_days? }` อนุมัติ + ตั้งวันหมดอายุ (ไม่ส่ง = ค่าเริ่มต้นของคอร์ส, `null` = ไม่หมดอายุ) + แจ้งเตือนสมาชิก |
 | PUT | `/api/admin/purchases/[id]` | `{ expires_at: "YYYY-MM-DD" \| null }` แก้วันหมดอายุสิทธิ์เรียน |

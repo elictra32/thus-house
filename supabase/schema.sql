@@ -122,6 +122,15 @@ create trigger on_auth_user_created
 -- ฟังก์ชัน trigger ไม่ควรเรียกผ่าน /rest/v1/rpc ได้
 revoke execute on function public.handle_new_user() from public, anon, authenticated;
 
+-- ---------- บัญชีที่ยังไม่ยืนยันอีเมล (ให้ Admin ยืนยันแทนได้) ----------
+-- อ่าน auth.users ได้เฉพาะ service role (API ฝั่ง Admin)
+create or replace function public.admin_unconfirmed_user_ids()
+returns table (id uuid) language sql stable security definer set search_path = '' as $$
+  select u.id from auth.users u where u.email_confirmed_at is null;
+$$;
+revoke execute on function public.admin_unconfirmed_user_ids() from public, anon, authenticated;
+grant execute on function public.admin_unconfirmed_user_ids() to service_role;
+
 -- ---------- ปรับฐานข้อมูลเดิม (schema รุ่นก่อน) ให้ตรงกับโค้ด ----------
 -- ฐานข้อมูลที่สร้างจาก schema รุ่นแรกมี NOT NULL / CHECK / UNIQUE ที่โค้ดนี้ไม่ใช้ → ผ่อนหรือเปลี่ยนให้ตรง
 alter table public.users alter column name drop not null;

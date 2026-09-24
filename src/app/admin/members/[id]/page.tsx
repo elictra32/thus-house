@@ -17,6 +17,7 @@ type Detail = {
   user: User;
   purchases: (Purchase & { classes: { id: string; name: string; videos_count: number } | null })[];
   watchedByClass: Record<string, number>;
+  emailConfirmed: boolean;
 };
 
 export default function MemberDetail({ params }: { params: { id: string } }) {
@@ -33,6 +34,19 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
     try {
       const { user } = await api.put<{ user: User }>(`/api/admin/users/${params.id}`, { status });
       setData((d) => (d ? { ...d, user } : d));
+    } catch (err) {
+      setActionError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function confirmEmail() {
+    setSaving(true);
+    setActionError("");
+    try {
+      await api.post(`/api/admin/users/${params.id}/confirm-email`);
+      setData((d) => (d ? { ...d, emailConfirmed: true } : d));
     } catch (err) {
       setActionError((err as Error).message);
     } finally {
@@ -70,6 +84,17 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
         <div className="card h-fit space-y-4 p-5 text-sm">
           <Row label="ชื่อ" value={user.name || "-"} />
           <Row label="อีเมล" value={user.email} />
+          <div>
+            <p className="text-xs text-muted">การยืนยันอีเมล</p>
+            {data.emailConfirmed ? (
+              <p className="text-green-300">✓ ยืนยันแล้ว</p>
+            ) : (
+              <div className="mt-1 space-y-2">
+                <p className="text-amber-300">ยังไม่ยืนยัน — เข้าสู่ระบบไม่ได้</p>
+                <Button size="sm" loading={saving} onClick={confirmEmail}>ยืนยันอีเมลแทนสมาชิก</Button>
+              </div>
+            )}
+          </div>
           <Row label="เบอร์โทร" value={user.phone || "-"} />
           <Row label="สมัครเมื่อ" value={formatDate(user.created_at)} />
           <Row label="เริ่มเป็นสมาชิก" value={formatDate(user.membership_start)} />
