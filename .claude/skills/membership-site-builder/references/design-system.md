@@ -29,7 +29,7 @@ THUS palette: plum `#2d183c / #3a2449 / #473654 / #6a5c73`, paper `#e3e2dd`, glo
 - `[text-wrap:pretty]` สำหรับย่อหน้า, ปุ่มบนมือถือเต็มความกว้างเรียงลง
 
 ## Dark mode
-- Tailwind `darkMode: "class"`, สลับ class `dark` บน `<html>`, จำใน localStorage, script ใน `<head>` กันกระพริบ
+- Tailwind `darkMode: "class"`, class `dark` บน `<html>` เป็นค่าเริ่มต้น (THUS ใช้ dark เป็น default), script ใน `<head>` ลบออกถ้าผู้ชมเคยเลือก light — กันกระพริบ
 - แสงฟุ้งสีส้ม/ชมพูบนพื้นมืดดูเป็นสีน้ำตาลหม่น → สลับเป็นม่วง/ฟ้าในโหมดมืด
 - gradient text ที่ override `dark:from-*` ต้องใส่ `dark:to-*` ซ้ำ (ไม่งั้นปลายสีโปร่งใส)
 - โลโก้พื้นอ่อนต้องสลับเป็นโลโก้ขาวในโหมดมืด
