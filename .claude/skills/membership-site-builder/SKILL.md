@@ -78,6 +78,7 @@ Supabase SMTP → Brevo; ต้องปิด Authorized IPs ของ SMTP key
 
 ## ฟีเจอร์ชุดหลังที่เพิ่ม (THUS) — ดูแผนที่ไฟล์ใน `references/features.md`
 - กันลิงก์วิดีโอหลุด (ส่งทีละบท + column grant + rate limit + log) · คอมเมนต์/ไลก์ใต้คลิป · ถามผู้สอน
+- ปุ่มอนุมัติสลิป / ยืนยันอีเมลใน Discord (Bot + Interactions endpoint `src/app/api/discord/interactions`, `src/lib/discord-bot.ts`, logic ร่วม `src/lib/purchase-actions.ts`) — ตรวจลายเซ็น Ed25519, ผูก `users.discord_id`, ตอบ deferred แล้วทำงานใน `waitUntil`
 - รหัสสมาชิก/ชื่อเล่น · เลือกผู้รับอีเมล · หน้า Usage & ค่าใช้จ่าย · Discord alerts · cron · backup
 - ทุกครั้งที่เพิ่มฟีเจอร์ที่ "สำคัญ" ให้ถามว่าควรแจ้ง Discord ไหม (`notifyDiscord(kind, title, fields, path)`)
 

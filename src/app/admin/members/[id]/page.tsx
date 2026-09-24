@@ -135,6 +135,18 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
               <p>{user.roles?.name ?? user.role}</p>
             )}
           </div>
+          {(canManageRoles || user.discord_id) && (
+            <div className="border-t border-line pt-4">
+              <FieldEditor
+                label="Discord ID (กดอนุมัติใน Discord)"
+                value={user.discord_id ?? ""}
+                placeholder="เช่น 123456789012345678"
+                disabled={!canManageRoles}
+                onSave={(v) => update({ discord_id: v })}
+              />
+              <p className="mt-2 text-xs text-subtle">ใส่เฉพาะทีมงานที่ให้กดปุ่มในห้องอนุมัติ Discord ได้ · กดปุ่มโดยไม่มีสิทธิ์ บอทจะบอก ID ให้</p>
+            </div>
+          )}
         </div>
 
         <div className="card overflow-x-auto">

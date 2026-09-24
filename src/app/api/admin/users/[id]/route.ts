@@ -61,6 +61,17 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
     }
     update.member_code = code;
   }
+  if ("discord_id" in body) {
+    // Discord ID = กดอนุมัติใน Discord ในนามบัญชีนี้ → ให้เฉพาะคนที่จัดการ Role ได้
+    if (!perms.has("roles")) return jsonError("ไม่มีสิทธิ์แก้ Discord ID", 403);
+    const discordId = str(body, "discord_id", { max: 20 });
+    if (discordId && !/^\d{17,20}$/.test(discordId)) return jsonError("Discord ID ต้องเป็นตัวเลข 17–20 หลัก");
+    if (discordId) {
+      const { data: taken } = await service.from("users").select("email").eq("discord_id", discordId).neq("id", id).maybeSingle();
+      if (taken) return jsonError(`Discord ID นี้ผูกกับ ${taken.email} อยู่แล้ว`);
+    }
+    update.discord_id = discordId;
+  }
   if ("membership_end" in body) update.membership_end = str(body, "membership_end");
   if ("role" in body) {
     if (!perms.has("roles")) return jsonError("ไม่มีสิทธิ์เปลี่ยน Role", 403);
@@ -71,8 +82,10 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
     update.role = role;
   }
   if (!Object.keys(update).length) return jsonError("ไม่มีข้อมูลที่จะแก้ไข");
+  // บัญชีเจ้าของระบบแก้จากหน้านี้ไม่ได้ ยกเว้น Discord ID (เจ้าของต้องผูกเพื่อกดอนุมัติใน Discord)
+  const onlyDiscord = Object.keys(update).every((k) => k === "discord_id");
   const guard = await guardTarget(service, id, perms);
-  if (guard.error) return guard.error;
+  if (guard.error && !onlyDiscord) return guard.error;
 
   const user = check(await service.from("users").update(update).eq("id", id).select().single());
   await logAdmin(service, email, "update", "users", id, update);
