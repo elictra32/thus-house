@@ -15,6 +15,10 @@ async function request<T>(method: string, url: string, body?: unknown): Promise<
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) throw new ApiError(data.error ?? "เกิดข้อผิดพลาด กรุณาลองใหม่", res.status);
+  // งาน Admin เปลี่ยนข้อมูล → ให้เมนู Admin โหลดตัวเลขแจ้งเตือนใหม่ทันที
+  if (method !== "GET" && url.startsWith("/api/admin") && typeof window !== "undefined") {
+    window.dispatchEvent(new Event("admin-badges"));
+  }
   return data as T;
 }
 
