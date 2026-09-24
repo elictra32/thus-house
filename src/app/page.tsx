@@ -84,6 +84,20 @@ const curriculum = [
   "ศิลปะของ Money Management",
 ];
 
+// ข้อความหลายบรรทัด: จอ md ขึ้นไปขึ้นบรรทัดใหม่ตรงตามที่กำหนด · มือถือไหลต่อกันตามความกว้างจอ
+function Lines({ children }: { children: React.ReactNode[] }) {
+  return (
+    <>
+      {children.map((line, i) => (
+        <Fragment key={i}>
+          {i > 0 && " "}
+          <span className="md:block md:whitespace-nowrap">{line}</span>
+        </Fragment>
+      ))}
+    </>
+  );
+}
+
 // แสง gradient เบลอแบบสไลด์ THUS MEMBER BENEFITS
 function Glow({ className }: { className: string }) {
   return <div aria-hidden className={`pointer-events-none absolute rounded-full blur-[90px] ${className}`} />;
@@ -102,8 +116,8 @@ export default async function Landing() {
         <Glow className="right-[-120px] top-[-60px] h-[460px] w-[420px] bg-glow-orange/45" />
         <Glow className="bottom-[-160px] left-1/3 h-[380px] w-[520px] bg-glow-pink/40" />
 
-        <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.08fr)] lg:gap-16">
-          <div className="max-w-[580px]">
+        <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-14">
+          <div>
             <p className="flex items-center gap-3 text-[11px] font-bold tracking-[0.32em] text-plum-700 sm:text-xs">
               <span aria-hidden className="h-px w-8 bg-plum-700/40" />
               THUS HOUSE OF TRADERS
@@ -119,18 +133,25 @@ export default async function Landing() {
               Winners Average Winners
             </p>
 
-            <div className="mt-6 space-y-3 text-[17px] leading-[1.85] text-charcoal/75 [text-wrap:pretty] sm:text-lg">
-              <p>
-                หลักสูตรที่ออกแบบมาเพื่อพัฒนาเทรดเดอร์ ตั้งแต่ระดับพื้นฐานไปจนถึงการต่อยอดสู่การเป็นมืออาชีพ{" "}
-                <span className="whitespace-nowrap">
-                  ภายในระยะเวลา <b className="font-bold text-plum-900">1 ปีเต็ม</b>
-                </span>
-              </p>
-              <p>
-                เน้นทั้ง <b className="whitespace-nowrap font-bold text-plum-900">“ทักษะการเทรดจริง”</b> และ{" "}
-                <b className="whitespace-nowrap font-bold text-plum-900">“กระบวนการคิดแบบมืออาชีพ”</b>
-              </p>
-            </div>
+            <p className="mt-6 text-[17px] leading-[1.85] text-charcoal/75 [text-wrap:pretty] lg:text-[17px] xl:text-lg">
+              <Lines>
+                {[
+                  <>
+                    หลักสูตรที่ออกแบบมาเพื่อพัฒนาเทรดเดอร์<span className="whitespace-nowrap">ตั้งแต่ระดับพื้นฐาน</span>
+                  </>,
+                  <>
+                    ไปจนถึง<span className="whitespace-nowrap">การต่อยอดสู่การเป็นมืออาชีพ</span>{" "}
+                    <span className="whitespace-nowrap">
+                      ภายในระยะเวลา <b className="font-bold text-plum-900">1 ปีเต็ม</b>
+                    </span>
+                  </>,
+                  <>
+                    เน้นทั้ง <b className="whitespace-nowrap font-bold text-plum-900">“ทักษะการเทรดจริง”</b> และ{" "}
+                    <b className="whitespace-nowrap font-bold text-plum-900">“กระบวนการคิดแบบมืออาชีพ”</b>
+                  </>,
+                ]}
+              </Lines>
+            </p>
 
             <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
               <ButtonLink href="/signup" variant="plum" className="h-12 px-6 text-base">
@@ -224,8 +245,9 @@ export default async function Landing() {
             <div className="mb-10 text-center">
               <p className="text-xs font-bold tracking-[3px] text-plum-300">COMMUNITY & NETWORKING</p>
               <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">THUS Meetup</h2>
-              <p className="mx-auto mt-3 max-w-xl text-white/75">
-                พบปะสังสรรค์ แลกเปลี่ยนประสบการณ์กับสมาชิกและทีมงาน THUS House — เฉลี่ย 2 เดือนครั้ง
+              <p className="mx-auto mt-4 max-w-3xl leading-relaxed text-white/75">
+                พบปะสังสรรค์ แลกเปลี่ยนประสบการณ์กับสมาชิกและทีมงาน THUS House{" "}
+                <span className="whitespace-nowrap">เฉลี่ย 2 เดือนครั้ง</span>
               </p>
             </div>
             <MeetupSlideshow items={meetups} />
@@ -264,17 +286,31 @@ export default async function Landing() {
       {/* ---------- หลักสูตร Class ปรับพื้นฐาน ---------- */}
       <section id="curriculum" className="relative scroll-mt-20 overflow-hidden px-[6vw] py-20">
         <Glow className="-left-40 bottom-0 h-[380px] w-[380px] bg-glow-blue/35" />
-        <div className="relative grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
-          <div>
-            <p className="text-xs font-bold tracking-[3px] text-plum-700">CURRICULUM</p>
-            <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">หัวข้อ Class ปรับพื้นฐาน</h2>
-            <p className="mt-4 max-w-md leading-relaxed text-charcoal/75">
-              20 บทเรียนปูพื้นให้พร้อมก่อนเรียนสด ตั้งแต่พื้นฐาน Futures, การคุมขนาดสถานะ, เครื่องมือ TradingView
-              ไปจนถึงการสร้างระบบเทรดของตัวเอง
-            </p>
-            <Image src="/brand/mark.png" alt="" width={120} height={120} className="mt-10 hidden opacity-90 lg:block" />
+        <div className="relative">
+          <div className="flex items-end justify-between gap-8">
+            <div>
+              <p className="text-xs font-bold tracking-[3px] text-plum-700">CURRICULUM</p>
+              <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">
+                หัวข้อ <span className="whitespace-nowrap">Class ปรับพื้นฐาน</span>
+              </h2>
+              <p className="mt-4 text-[17px] leading-[1.85] text-charcoal/75">
+                <Lines>
+                  {[
+                    <>
+                      <b className="font-bold text-plum-900">20 บทเรียน</b>ปูพื้นให้พร้อมก่อนเรียนสด{" "}
+                      <span className="whitespace-nowrap">ตั้งแต่พื้นฐาน Futures</span>
+                    </>,
+                    <>
+                      การคุมขนาดสถานะ, <span className="whitespace-nowrap">เครื่องมือ TradingView</span> ไปจนถึง
+                      <span className="whitespace-nowrap">การสร้างระบบเทรดของตัวเอง</span>
+                    </>,
+                  ]}
+                </Lines>
+              </p>
+            </div>
+            <Image src="/brand/mark.png" alt="" width={96} height={96} className="hidden shrink-0 opacity-90 lg:block" />
           </div>
-          <ol className="grid gap-x-8 sm:grid-cols-2">
+          <ol className="mt-10 grid gap-x-10 sm:grid-cols-2">
             {curriculum.map((c, i) => (
               <li key={c} className="flex items-baseline gap-4 border-b border-charcoal/10 py-3.5">
                 <span className="w-7 shrink-0 text-sm font-extrabold text-plum-500">{String(i + 1).padStart(2, "0")}</span>
