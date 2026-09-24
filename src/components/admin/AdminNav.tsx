@@ -1,4 +1,5 @@
 "use client";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,24 @@ const items: { href: string; label: string; icon: string; perm?: Permission }[] 
 
 export default function AdminNav({ permissions }: { permissions: Permission[] }) {
   const path = usePathname();
+  // ตัวเลขสีส้ม = งานที่รออยู่ (สลิปรอตรวจ / ข้อความใหม่ / รอยืนยันอีเมล) — โหลดใหม่ทุกครั้งที่เปลี่ยนหน้า และทุก 60 วินาที
+  const [badges, setBadges] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let alive = true;
+    const load = () =>
+      fetch("/api/admin/badges", { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : {}))
+        .then((b) => alive && setBadges(b))
+        .catch(() => {});
+    load();
+    const t = setInterval(load, 60_000);
+    window.addEventListener("admin-badges", load);
+    return () => {
+      alive = false;
+      clearInterval(t);
+      window.removeEventListener("admin-badges", load);
+    };
+  }, [path]);
   const visible = items.filter((i) => !i.perm || permissions.includes(i.perm));
   return (
     <nav className="flex gap-1 overflow-x-auto px-3 pb-3 lg:flex-col lg:pb-0">
@@ -38,6 +57,11 @@ export default function AdminNav({ permissions }: { permissions: Permission[] })
           >
             <span className="w-4 text-center">{i.icon}</span>
             {i.label}
+            {!!badges[i.href] && (
+              <span className="ml-auto min-w-[20px] rounded-full bg-[#ec9e56] px-1.5 py-0.5 text-center text-[11px] font-bold leading-none text-[#2d183c] shadow-[0_0_12px_#ec9e5680]">
+                {badges[i.href] > 99 ? "99+" : badges[i.href]}
+              </span>
+            )}
           </Link>
         );
       })}
