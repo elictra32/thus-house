@@ -3,18 +3,20 @@ import { NextResponse } from "next/server";
 import type { SupabaseClient, User as AuthUser } from "@supabase/supabase-js";
 import { jsonError, requireApiAdmin } from "./auth";
 import { ValidationError } from "./validate";
+import type { Permission } from "./permissions";
 
-type Ctx = { service: SupabaseClient; email: string; user: AuthUser };
+type Ctx = { service: SupabaseClient; email: string; user: AuthUser; perms: Set<Permission> };
 
-// ห่อ handler ของ /api/admin/*: ตรวจสิทธิ์ Admin + จัดการ error ให้เป็น JSON
+// ห่อ handler ของ /api/admin/*: ตรวจสิทธิ์ตาม Role (perm) + จัดการ error ให้เป็น JSON
 export function adminRoute<P = Record<string, string>>(
+  perm: Permission,
   handler: (req: Request, ctx: Ctx, params: P) => Promise<NextResponse>,
 ) {
   return async (req: Request, { params }: { params: P }) => {
-    const auth = await requireApiAdmin();
+    const auth = await requireApiAdmin(perm);
     if (!auth.ok) return auth.res;
     try {
-      return await handler(req, { service: auth.service, email: auth.email, user: auth.user }, params);
+      return await handler(req, { service: auth.service, email: auth.email, user: auth.user, perms: auth.perms }, params);
     } catch (err) {
       if (err instanceof ValidationError) return jsonError(err.message, 400);
       console.error(err);

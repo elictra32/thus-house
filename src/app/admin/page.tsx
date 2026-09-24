@@ -9,20 +9,33 @@ import { baht } from "@/lib/utils";
 export const metadata = { title: "Dashboard" };
 
 export default async function AdminDashboard() {
-  const { service } = await requirePageAdmin();
-  const [a, unconfirmed] = await Promise.all([computeAnalytics(service), unconfirmedUserIds(service)]);
+  const { service, perms } = await requirePageAdmin();
+  const unconfirmed = perms.has("members") ? await unconfirmedUserIds(service) : new Set<string>();
+  const banner = unconfirmed.size > 0 && (
+    <Link
+      href="/admin/members?status=unconfirmed"
+      className="mb-6 block rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-amber-200"
+    >
+      มีสมาชิกรอยืนยันอีเมล {unconfirmed.size} คน — คลิกเพื่อยืนยันบัญชี →
+    </Link>
+  );
+
+  // Role ที่ไม่มีสิทธิ์ดูตัวเลขภาพรวม → แสดงแค่หน้าต้อนรับ ใช้เมนูด้านซ้ายตามสิทธิ์
+  if (!perms.has("dashboard")) {
+    return (
+      <>
+        <PageHeader title="Admin" subtitle="เลือกเมนูด้านซ้ายตามสิทธิ์ของคุณ" />
+        {banner}
+      </>
+    );
+  }
+
+  const a = await computeAnalytics(service);
 
   return (
     <>
       <PageHeader title="Admin Dashboard" subtitle="ภาพรวมของ Thushouse" />
-      {unconfirmed.size > 0 && (
-        <Link
-          href="/admin/members?status=unconfirmed"
-          className="mb-6 block rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-amber-200"
-        >
-          มีสมาชิกรอยืนยันอีเมล {unconfirmed.size} คน — คลิกเพื่อยืนยันบัญชี →
-        </Link>
-      )}
+      {banner}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         <StatCard label="สมาชิกทั้งหมด" value={a.totals.users.toLocaleString()} />
         <StatCard label="รายได้รวม" value={baht(a.totals.revenue)} />

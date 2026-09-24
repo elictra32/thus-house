@@ -6,7 +6,7 @@ const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 // body: { target: "all" | "class" | "status", classId?, status?, subject, message, notify? }
-export const POST = adminRoute(async (req, { service, email }) => {
+export const POST = adminRoute("email", async (req, { service, email }) => {
   const body = await readJson(req);
   const target = oneOf(body, "target", ["all", "class", "status"] as const) ?? "all";
   const subject = str(body, "subject", { required: true, max: 200 })!;

@@ -1,13 +1,13 @@
 import "server-only";
 import type { SupabaseClient, User as AuthUser } from "@supabase/supabase-js";
-import { isAdminEmail } from "./admin";
+import { getPermissions } from "./auth";
 import { createServiceSupabase } from "./supabase-server";
 import { isActivePurchase } from "./utils";
 import type { Video } from "@/types/database";
 
-// ตรวจสิทธิ์เข้าเรียน: ต้องมี purchase ที่ approved และยังไม่หมดอายุ + บัญชียังใช้งานอยู่ (Admin ดูได้ทุกคอร์ส)
+// ตรวจสิทธิ์เข้าเรียน: ต้องมี purchase ที่ approved และยังไม่หมดอายุ + บัญชียังใช้งานอยู่ (ผู้มีสิทธิ์ classes ดูได้ทุกคอร์ส)
 export async function getClassAccess(supabase: SupabaseClient, user: AuthUser, classId: string) {
-  if (isAdminEmail(user.email)) {
+  if ((await getPermissions(user.id, user.email)).has("classes")) {
     const { data } = await createServiceSupabase()
       .from("videos").select("*").eq("class_id", classId).order("order_index");
     return { hasAccess: true, pending: false, inactive: false, expired: null, expiresAt: null, videos: (data ?? []) as Video[] };

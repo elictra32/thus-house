@@ -7,7 +7,7 @@ import { baht, formatDate } from "@/lib/utils";
 export const metadata = { title: "Analytics" };
 
 export default async function AnalyticsPage() {
-  const { service } = await requirePageAdmin();
+  const { service } = await requirePageAdmin("dashboard");
   const a = await computeAnalytics(service);
 
   return (

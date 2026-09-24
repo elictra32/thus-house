@@ -105,6 +105,34 @@ create index if not exists videos_class_idx on public.videos(class_id, order_ind
 create index if not exists watched_user_idx on public.watched_videos(user_id);
 create index if not exists notifications_user_idx on public.notifications(user_id, is_read);
 
+-- ---------- Role & สิทธิ์ ----------
+-- permissions: dashboard, payments, members, classes, live, email, logs, roles (ดู src/lib/permissions.ts)
+-- Role ระบบ (is_system) ลบไม่ได้ · member = สมาชิกทั่วไป (ไม่มีสิทธิ์ Admin)
+create table if not exists public.roles (
+  id text primary key,
+  name text not null,
+  description text,
+  permissions text[] not null default '{}',
+  is_system boolean not null default false,
+  created_at timestamptz not null default now()
+);
+insert into public.roles (id, name, description, permissions, is_system) values
+  ('member', 'Member', 'สมาชิกทั่วไป เรียนคอร์สที่ซื้อได้', '{}', true),
+  ('admin', 'Admin', 'ดูแลงานประจำวัน แต่เปลี่ยน Role ไม่ได้',
+    '{dashboard,payments,members,classes,live,email,logs}', true),
+  ('head_admin', 'Head Admin', 'ทำได้ทุกอย่าง รวมถึงสร้าง Role และเปลี่ยน Role ของผู้อื่น',
+    '{dashboard,payments,members,classes,live,email,logs,roles}', true)
+on conflict (id) do nothing;
+alter table public.roles enable row level security;
+-- ไม่มี policy = อ่าน/เขียนได้เฉพาะ API ฝั่ง server (service role)
+
+alter table public.users add column if not exists role text not null default 'member';
+do $$ begin
+  alter table public.users add constraint users_role_fkey
+    foreign key (role) references public.roles(id) on update cascade on delete set default;
+exception when duplicate_object then null; end $$;
+create index if not exists users_role_idx on public.users(role);
+
 -- ---------- สร้างแถวใน public.users อัตโนมัติเมื่อมีคนสมัคร ----------
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$

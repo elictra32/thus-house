@@ -4,12 +4,12 @@ import { ButtonLink } from "./Button";
 import NotificationBell from "./NotificationBell";
 import LogoutButton from "./LogoutButton";
 import MobileMenu from "./MobileMenu";
-import { getAuthUser } from "@/lib/auth";
-import { isAdminEmail, supabaseConfigured } from "@/lib/admin";
+import { getAuthUser, getPermissions } from "@/lib/auth";
+import { supabaseConfigured } from "@/lib/admin";
 
 export default async function Navbar() {
   const user = supabaseConfigured() ? (await getAuthUser()).user : null;
-  const admin = isAdminEmail(user?.email);
+  const admin = user ? (await getPermissions(user.id, user.email)).size > 0 : false;
 
   const links = user
     ? [

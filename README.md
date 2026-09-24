@@ -56,7 +56,20 @@ npm run dev                  # http://localhost:3000
 
 ### เข้าใช้ Admin ครั้งแรก
 
-สมัครสมาชิกที่ `/signup` ด้วยอีเมลที่อยู่ใน `NEXT_PUBLIC_ADMIN_EMAILS` → เมนู **Admin** จะขึ้นที่แถบด้านบน
+สมัครสมาชิกที่ `/signup` ด้วยอีเมลที่อยู่ใน `NEXT_PUBLIC_ADMIN_EMAILS` (เจ้าของระบบ) → ให้ Admin ที่มีอยู่ยืนยันบัญชี (หรือยืนยันใน Supabase Dashboard) → เมนู **Admin** จะขึ้นที่แถบด้านบน
+
+### Role & สิทธิ์
+
+| Role | ทำอะไรได้ |
+|---|---|
+| Member | เรียนคอร์สที่ซื้อ (ค่าเริ่มต้นของทุกคน) |
+| Admin | Dashboard, อนุมัติการชำระเงิน, จัดการสมาชิก/ยืนยันอีเมล, คอร์ส, Live, ส่งอีเมล, Audit log — **เปลี่ยน Role ไม่ได้** |
+| Head Admin | ทุกอย่าง + สร้าง/แก้ Role และเปลี่ยน Role ของผู้อื่น |
+
+- Head Admin สร้าง Role ใหม่ได้ที่ `/admin/roles` โดยติ๊กสิทธิ์ที่ต้องการ · เปลี่ยน Role ของสมาชิกได้ที่หน้ารายละเอียดสมาชิก
+- อีเมลใน `NEXT_PUBLIC_ADMIN_EMAILS` = เจ้าของระบบ ได้ทุกสิทธิ์เสมอ เปลี่ยน Role / ระงับ / ลบจากหน้า Admin ไม่ได้ (กันล็อกตัวเองออก)
+- บัญชีที่ไม่ได้ active ไม่มีสิทธิ์ Admin · คนที่ไม่มีสิทธิ์ `roles` แก้หรือลบบัญชี Head Admin ไม่ได้
+- เพิ่มสิทธิ์ใหม่ในโค้ด: `src/lib/permissions.ts` แล้วใช้กับ `adminRoute("<สิทธิ์>", …)` / `requirePageAdmin("<สิทธิ์>")`
 
 ### เพิ่มวิดีโอจาก Google Drive
 
@@ -99,13 +112,15 @@ npm run dev                  # http://localhost:3000
 | GET | `/api/notifications` | แจ้งเตือน 30 รายการล่าสุด |
 | POST | `/api/notifications/[id]/read` | อ่านแล้ว |
 
-### Admin (ต้องเป็นอีเมลใน `NEXT_PUBLIC_ADMIN_EMAILS` ไม่งั้น 403 · ทุกการแก้ไขบันทึกลง `admin_logs`)
+### Admin (ต้องมีสิทธิ์ตาม Role ของ endpoint นั้น ไม่งั้น 403 · ทุกการแก้ไขบันทึกลง `admin_logs`)
 
 | Method | Path | คำอธิบาย |
 |---|---|---|
 | GET | `/api/admin/users?q=&status=&page=` | ค้นหา/กรอง/แบ่งหน้า (20 ต่อหน้า) · `status=unconfirmed` = รอยืนยันอีเมล |
-| GET / PUT / DELETE | `/api/admin/users/[id]` | รายละเอียด (+ การซื้อ, จำนวนที่ดูต่อคอร์ส) / แก้ `status,name,phone` / ลบ |
+| GET / PUT / DELETE | `/api/admin/users/[id]` | รายละเอียด (+ การซื้อ, จำนวนที่ดูต่อคอร์ส) / แก้ `status,name,phone,role` (`role` ต้องมีสิทธิ์ `roles`) / ลบ |
 | POST | `/api/admin/users/[id]/confirm-email` | ยืนยันอีเมลแทนสมาชิก (บัญชีที่สมัครตอนส่งอีเมลยืนยันไม่ได้) |
+| GET / POST | `/api/admin/roles` | รายการ Role + จำนวนสมาชิก / สร้าง `{ name, description?, permissions[] }` (สิทธิ์ `roles`) |
+| PUT / DELETE | `/api/admin/roles/[id]` | แก้ / ลบ Role ที่สร้างเอง (สมาชิกกลับเป็น Member) |
 | GET | `/api/admin/purchases?status=pending\|approved\|rejected\|all` | พร้อม signed URL ของสลิป (อายุ 1 ชม.) |
 | POST | `/api/admin/purchases/[id]/approve` | `{ access_days? }` อนุมัติ + ตั้งวันหมดอายุ (ไม่ส่ง = ค่าเริ่มต้นของคอร์ส, `null` = ไม่หมดอายุ) + แจ้งเตือนสมาชิก |
 | PUT | `/api/admin/purchases/[id]` | `{ expires_at: "YYYY-MM-DD" \| null }` แก้วันหมดอายุสิทธิ์เรียน |

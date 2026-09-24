@@ -4,7 +4,7 @@ import { str, ValidationError } from "@/lib/validate";
 
 // แก้วันหมดอายุสิทธิ์เรียน: { expires_at: "YYYY-MM-DD" | null } (null = ไม่หมดอายุ)
 // วันที่ที่ส่งมา = เรียนได้ถึงสิ้นวันนั้นตามเวลาไทย
-export const PUT = adminRoute<{ id: string }>(async (req, { service, email }, { id }) => {
+export const PUT = adminRoute<{ id: string }>("payments", async (req, { service, email }, { id }) => {
   const body = await readJson(req);
   if (!("expires_at" in body)) throw new ValidationError("ไม่มีข้อมูลที่จะบันทึก");
   const date = str(body, "expires_at");

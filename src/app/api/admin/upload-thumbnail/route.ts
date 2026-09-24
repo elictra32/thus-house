@@ -3,7 +3,7 @@ import { jsonError } from "@/lib/auth";
 
 const TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp" };
 
-export const POST = adminRoute(async (req, { service }) => {
+export const POST = adminRoute("classes", async (req, { service }) => {
   const file = (await req.formData().catch(() => null))?.get("file");
   if (!(file instanceof File)) return jsonError("กรุณาเลือกไฟล์");
   const ext = TYPES[file.type];

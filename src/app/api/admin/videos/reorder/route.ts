@@ -2,7 +2,7 @@ import { adminRoute, ok, readJson } from "@/lib/admin-route";
 import { jsonError, logAdmin } from "@/lib/auth";
 
 // body: { classId, ids: [videoId ตามลำดับใหม่] }
-export const PUT = adminRoute(async (req, { service, email }) => {
+export const PUT = adminRoute("classes", async (req, { service, email }) => {
   const { classId, ids } = await readJson(req);
   if (typeof classId !== "string" || !Array.isArray(ids) || !ids.every((i) => typeof i === "string")) {
     return jsonError("ข้อมูลไม่ถูกต้อง");

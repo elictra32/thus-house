@@ -11,6 +11,16 @@ export interface User {
   membership_start: string | null;
   membership_end: string | null;
   last_login_at: string | null;
+  role: string; // id ใน roles
+  created_at: string;
+}
+
+export interface Role {
+  id: string;
+  name: string;
+  description: string | null;
+  permissions: string[];
+  is_system: boolean;
   created_at: string;
 }
 

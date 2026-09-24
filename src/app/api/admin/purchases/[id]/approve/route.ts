@@ -5,7 +5,7 @@ import { addDays, formatDate } from "@/lib/utils";
 
 // body (ไม่บังคับ): { access_days } อายุสมาชิกของรายการนี้ (วัน)
 // ไม่ส่ง = ใช้ค่าเริ่มต้นของคอร์ส · ส่งค่าว่าง/null = ไม่หมดอายุ
-export const POST = adminRoute<{ id: string }>(async (req, { service, email }, { id }) => {
+export const POST = adminRoute<{ id: string }>("payments", async (req, { service, email }, { id }) => {
   const body = ((await req.json().catch(() => null)) ?? {}) as Record<string, unknown>;
   const { data: p } = await service.from("purchases").select("*, classes(name, access_days)").eq("id", id).maybeSingle();
   if (!p) return jsonError("ไม่พบรายการ", 404);
