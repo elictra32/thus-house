@@ -23,6 +23,7 @@ export default async function Navbar({ light = false }: { light?: boolean }) {
         { href: "/#highlights", label: "Highlights" },
         { href: "/#benefits", label: "Member Benefits" },
         { href: "/#curriculum", label: "หลักสูตร" },
+        { href: "/feedback", label: "Feedback" },
       ];
 
   return (

@@ -106,3 +106,14 @@ export type PurchaseWithRelations = Purchase & {
   classes: Pick<Class, "id" | "name" | "access_days"> | null;
   users: Pick<User, "id" | "name" | "email"> | null;
 };
+
+export type GalleryKind = "feedback" | "meetup";
+
+export interface GalleryItem {
+  id: string;
+  kind: GalleryKind;
+  image_url: string;
+  caption: string | null;
+  order_index: number;
+  created_at: string;
+}

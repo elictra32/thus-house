@@ -105,8 +105,25 @@ create index if not exists videos_class_idx on public.videos(class_id, order_ind
 create index if not exists watched_user_idx on public.watched_videos(user_id);
 create index if not exists notifications_user_idx on public.notifications(user_id, is_read);
 
+-- ---------- รูปหน้าเว็บ: Feedback / Meetup ----------
+-- image_url = ลิงก์รูปใน bucket gallery หรือไฟล์ใน public/ ของเว็บ (/gallery/...)
+create table if not exists public.gallery_items (
+  id uuid primary key default gen_random_uuid(),
+  kind text not null check (kind in ('feedback', 'meetup')),
+  image_url text not null,
+  caption text,
+  order_index int not null default 0,
+  created_at timestamptz not null default now()
+);
+create index if not exists gallery_kind_idx on public.gallery_items(kind, order_index);
+alter table public.gallery_items enable row level security;
+drop policy if exists "gallery: public read" on public.gallery_items;
+create policy "gallery: public read" on public.gallery_items for select using (true);
+insert into storage.buckets (id, name, public) values ('gallery', 'gallery', true)
+  on conflict (id) do nothing;
+
 -- ---------- Role & สิทธิ์ ----------
--- permissions: dashboard, payments, members, classes, live, email, logs, roles (ดู src/lib/permissions.ts)
+-- permissions: dashboard, payments, members, classes, live, email, content, logs, roles (ดู src/lib/permissions.ts)
 -- Role ระบบ (is_system) ลบไม่ได้ · member = สมาชิกทั่วไป (ไม่มีสิทธิ์ Admin)
 create table if not exists public.roles (
   id text primary key,
@@ -119,9 +136,9 @@ create table if not exists public.roles (
 insert into public.roles (id, name, description, permissions, is_system) values
   ('member', 'Member', 'สมาชิกทั่วไป เรียนคอร์สที่ซื้อได้', '{}', true),
   ('admin', 'Admin', 'ดูแลงานประจำวัน แต่เปลี่ยน Role ไม่ได้',
-    '{dashboard,payments,members,classes,live,email,logs}', true),
+    '{dashboard,payments,members,classes,live,email,content,logs}', true),
   ('head_admin', 'Head Admin', 'ทำได้ทุกอย่าง รวมถึงสร้าง Role และเปลี่ยน Role ของผู้อื่น',
-    '{dashboard,payments,members,classes,live,email,logs,roles}', true)
+    '{dashboard,payments,members,classes,live,email,content,logs,roles}', true)
 on conflict (id) do nothing;
 alter table public.roles enable row level security;
 -- ไม่มี policy = อ่าน/เขียนได้เฉพาะ API ฝั่ง server (service role)
