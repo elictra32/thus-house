@@ -151,3 +151,5 @@ Class ปรับพื้นฐาน 20 บท: พื้นฐาน Futures
 - ค่าคอมตั้งต้น (จากไฟล์ทีม, ต่อสัญญา ไป-กลับ): S50 53.5 · GO 117.7 · MGO 11.77 · SVF 85.6 · USD 21.4 · USDJPY 21.62 (ตัวคูณ 300) · หุ้น Futures คิดเป็น % แก้เองรายไม้
 - **เว็บ:** https://thus-journal.vercel.app (Vercel project `thus-journal`, region sin1, Hobby) · push ตรงเข้า main ด้วยผู้เขียนที่ไม่ใช่สมาชิก Vercel จะ **BLOCKED** → deploy ผ่าน MCP `create_deployment` (gitSource + sha) หรือให้เจ้าของ merge PR
 - **ผลทดสอบแหล่งราคา (24 ก.ย. 2026):** TFEX/SET API ถูก Incapsula บล็อก (403) และ Yahoo ตอบ 429 จากทั้ง Supabase และ Vercel → ดึงราคาฟรีจากเซิร์ฟเวอร์ไม่ได้ · ทางจริง = Settrade Open API (ฟรีผ่านโบรกเกอร์) · TradingView ไม่มี API ราคาฟรี (ใช้ได้แค่ widget ดูกราฟฝั่งผู้ใช้)
+- **UX หน้าไม้ (เจ้าของสั่ง):** ฟอร์มกรอกครบทุกช่องมีเฉพาะ "บันทึกไม้ใหม่" · ไม้ที่ปิดแล้ว = ดูอย่างเดียว ต้องกด "แก้ไข" ก่อน · ไม้ที่ถืออยู่ = กดได้แค่ "Close position" · ส่วน Journal (กลยุทธ์/อารมณ์/บันทึกเหตุผล) แก้ได้เสมอ — ห้ามทำหน้าที่แตะแล้วแก้ข้อมูลได้ทันที (กันกดผิด)
+- ในหน้าไม้ใส่กราฟ TradingView (widget ฟรี, สัญลักษณ์ `TFEX:S50Z2026`) · Mark จุดเข้า-ออกอัตโนมัติรอ Settrade Open API (บัญชี TFEX อยู่กับ Pi Securities)
