@@ -19,6 +19,7 @@ type Detail = {
   watchedByClass: Record<string, number>;
   emailConfirmed: boolean;
   isOwner: boolean;
+  videoLogs: { id: number; blocked: boolean; ip: string | null; created_at: string; videos: { title: string } | null; classes: { name: string } | null }[];
 };
 
 export default function MemberDetail({ params }: { params: { id: string } }) {
@@ -153,6 +154,32 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="card mt-6 overflow-x-auto">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-5">
+          <h3 className="font-bold">ประวัติเปิดบทเรียน (100 ครั้งล่าสุด)</h3>
+          {data.videoLogs.some((l) => l.blocked) && (
+            <span className="rounded-full bg-red-500/15 px-3 py-1 text-xs font-bold text-red-300">
+              ⚠️ เคยเปิดบทเรียนถี่ผิดปกติ {data.videoLogs.filter((l) => l.blocked).length} ครั้ง
+            </span>
+          )}
+        </div>
+        <table className="w-full min-w-[640px]">
+          <thead><tr><th className="th">เวลา</th><th className="th">คอร์ส</th><th className="th">บทเรียน</th><th className="th">IP</th><th className="th">ผล</th></tr></thead>
+          <tbody>
+            {data.videoLogs.map((l) => (
+              <tr key={l.id} className={l.blocked ? "bg-red-500/[0.06]" : undefined}>
+                <td className="td whitespace-nowrap text-muted">{formatDate(l.created_at, true)}</td>
+                <td className="td">{l.classes?.name ?? "-"}</td>
+                <td className="td">{l.videos?.title ?? "(ลบแล้ว)"}</td>
+                <td className="td text-muted">{l.ip ?? "-"}</td>
+                <td className="td">{l.blocked ? <span className="font-bold text-red-300">ถูกพัก (ถี่เกิน)</span> : "เปิดดู"}</td>
+              </tr>
+            ))}
+            {!data.videoLogs.length && <tr><td className="td text-muted" colSpan={5}>ยังไม่มีประวัติ</td></tr>}
+          </tbody>
+        </table>
       </div>
 
       <ConfirmModal

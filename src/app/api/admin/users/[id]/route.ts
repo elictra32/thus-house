@@ -19,10 +19,13 @@ async function guardTarget(service: SupabaseClient, id: string, perms: Set<Permi
 }
 
 export const GET = adminRoute<P>("members", async (_req, { service }, { id }) => {
-  const [user, purchases, watched] = await Promise.all([
+  const [user, purchases, watched, videoLogs] = await Promise.all([
     service.from("users").select("*, roles(name)").eq("id", id).maybeSingle(),
     service.from("purchases").select("*, classes(id, name, videos_count)").eq("user_id", id).order("created_at", { ascending: false }),
     service.from("watched_videos").select("video_id, videos(class_id)").eq("user_id", id),
+    // ประวัติเปิดบทเรียน 100 ครั้งล่าสุด (บันทึกโดย /api/videos/[id]/source)
+    service.from("video_access_logs").select("id, blocked, ip, created_at, videos(title), classes(name)")
+      .eq("user_id", id).order("created_at", { ascending: false }).limit(100),
   ]);
   if (!user.data) return jsonError("ไม่พบสมาชิก", 404);
 
@@ -38,6 +41,7 @@ export const GET = adminRoute<P>("members", async (_req, { service }, { id }) =>
     watchedByClass,
     emailConfirmed,
     isOwner: isAdminEmail(user.data.email),
+    videoLogs: videoLogs.data ?? [],
   });
 });
 

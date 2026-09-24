@@ -1,6 +1,6 @@
 "use client";
 import { cn, formatDuration } from "@/lib/utils";
-import type { Video } from "@/types/database";
+import type { LessonVideo } from "@/types/database";
 
 export default function VideoList({
   videos,
@@ -8,7 +8,7 @@ export default function VideoList({
   watched,
   onSelect,
 }: {
-  videos: Video[];
+  videos: LessonVideo[];
   currentId: string;
   watched: Set<string>;
   onSelect: (id: string) => void;

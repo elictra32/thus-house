@@ -295,3 +295,24 @@ insert into storage.buckets (id, name, public) values ('slips', 'slips', false)
   on conflict (id) do nothing;
 insert into storage.buckets (id, name, public) values ('thumbnails', 'thumbnails', true)
   on conflict (id) do nothing;
+
+-- ---------- ป้องกันลิงก์วิดีโอหลุด ----------
+-- สมาชิกอ่านรายการบทเรียนได้ แต่อ่านคอลัมน์ video_url ไม่ได้ — ขอลิงก์ทีละบทผ่าน /api/videos/[id]/source (service role)
+alter table public.videos add column if not exists thumbnail_url text;
+revoke select on public.videos from anon, authenticated;
+grant select (id, class_id, title, description, duration_seconds, thumbnail_url, order_index, created_at) on public.videos to authenticated;
+
+-- ประวัติขอลิงก์วิดีโอ (ใช้จำกัดจำนวน + แจ้งเตือน Admin) — เข้าถึงได้เฉพาะ service role
+create table if not exists public.video_access_logs (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references public.users(id) on delete cascade,
+  video_id uuid references public.videos(id) on delete set null,
+  class_id uuid references public.classes(id) on delete set null,
+  blocked boolean not null default false,
+  ip text,
+  created_at timestamptz not null default now()
+);
+create index if not exists video_access_logs_user_time on public.video_access_logs (user_id, created_at desc);
+create index if not exists video_access_logs_time on public.video_access_logs (created_at desc);
+alter table public.video_access_logs enable row level security;
+revoke all on public.video_access_logs from anon, authenticated;

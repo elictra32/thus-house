@@ -63,6 +63,9 @@ export interface Video {
   created_at: string;
 }
 
+// วิดีโอฝั่งสมาชิก — ไม่มีลิงก์วิดีโอ (ขอลิงก์ทีละบทผ่าน /api/videos/[id]/source)
+export type LessonVideo = Omit<Video, "video_url">;
+
 export interface WatchedVideo {
   id: string;
   user_id: string;
