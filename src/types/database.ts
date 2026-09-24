@@ -93,6 +93,7 @@ export interface Notification {
   type: string;
   title: string;
   message: string | null;
+  link: string | null; // กดแจ้งเตือนแล้วพาไปหน้านี้
   is_read: boolean;
   created_at: string;
 }

@@ -91,6 +91,7 @@ create table if not exists public.notifications (
   is_read boolean not null default false,
   created_at timestamptz not null default now()
 );
+alter table public.notifications add column if not exists link text; -- กดแจ้งเตือนแล้วพาไปหน้านี้
 
 create table if not exists public.admin_logs (
   id uuid primary key default gen_random_uuid(),

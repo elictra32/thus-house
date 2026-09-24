@@ -26,6 +26,7 @@ export const PUT = adminRoute<P>("community", async (req, { service, email }, { 
   await service.from("notifications").insert({
     user_id: msg.user_id,
     type: "message",
+    link: "/messages",
     title: "ผู้สอนตอบข้อความของคุณแล้ว",
     message: reply.slice(0, 300),
   });

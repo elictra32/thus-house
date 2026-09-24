@@ -24,6 +24,7 @@ export const POST = adminRoute<{ id: string }>("payments", async (req, { service
   await service.from("notifications").insert({
     user_id: p.user_id,
     type: "payment_approved",
+    link: `/classes/${p.class_id}`,
     title: "ชำระเงินสำเร็จ 🎉",
     message: `คอร์ส ${p.classes?.name ?? ""} เปิดสิทธิ์แล้ว เริ่มเรียนได้เลย` + (expiresAt ? ` (เรียนได้ถึง ${formatDate(expiresAt)})` : ""),
   });
