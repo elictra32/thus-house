@@ -5,10 +5,10 @@ import { oneOf, str } from "@/lib/validate";
 const escapeHtml = (s: string) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
-// body: { target: "all" | "class" | "status", classId?, status?, subject, message, notify? }
-export const POST = adminRoute("email", async (req, { service, email }) => {
+// body: { target: "self" | "all" | "class" | "role" | "status" | "users", classId?, roleId?, status?, userIds?, subject, message, notify? }
+export const POST = adminRoute("email", async (req, { service, email, user }) => {
   const body = await readJson(req);
-  const target = oneOf(body, "target", ["all", "class", "status"] as const) ?? "all";
+  const target = oneOf(body, "target", ["self", "all", "class", "role", "status", "users"] as const) ?? "all";
   const subject = str(body, "subject", { required: true, max: 200 })!;
   const message = str(body, "message", { required: true, max: 20000 })!;
   const alsoNotify = body.notify === true;
@@ -21,6 +21,15 @@ export const POST = adminRoute("email", async (req, { service, email }) => {
     ) as unknown as { users: { id: string; email: string; name: string | null } | null }[];
     const map = new Map(rows.filter((r) => r.users).map((r) => [r.users!.id, r.users!]));
     recipients = Array.from(map.values());
+  } else if (target === "self") {
+    recipients = check(await service.from("users").select("id, email, name").eq("id", user.id));
+  } else if (target === "role") {
+    const roleId = str(body, "roleId", { required: true })!;
+    recipients = check(await service.from("users").select("id, email, name").eq("role", roleId));
+  } else if (target === "users") {
+    const ids = Array.isArray(body.userIds) ? body.userIds.filter((v): v is string => typeof v === "string").slice(0, 1000) : [];
+    if (!ids.length) return jsonError("กรุณาเลือกสมาชิกอย่างน้อย 1 คน");
+    recipients = check(await service.from("users").select("id, email, name").in("id", ids));
   } else {
     let q = service.from("users").select("id, email, name");
     if (target === "status") q = q.eq("status", oneOf(body, "status", ["active", "inactive", "suspended"] as const) ?? "active");

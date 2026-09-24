@@ -25,29 +25,28 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   const access = await getClassAccess(auth.supabase, user, video.class_id);
   if (!access.hasAccess) return jsonError("ไม่มีสิทธิ์เข้าถึงคอร์สนี้", 403);
 
-  // ทีมงานที่จัดการคอร์สได้ ไม่ติดลิมิต
+  // ทีมงานที่จัดการคอร์สได้ ไม่ติดลิมิต (แต่ยังบันทึกประวัติ)
   const staff = (await getPermissions(user.id, user.email)).has("classes");
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? null;
 
-  if (!staff) {
-    const since = new Date(Date.now() - HOUR).toISOString();
-    const { data: recent } = await service
-      .from("video_access_logs").select("video_id, blocked, created_at")
-      .eq("user_id", user.id).gte("created_at", since);
-    const rows = recent ?? [];
-    const opened = new Set(rows.filter((r) => !r.blocked).map((r) => r.video_id));
+  const since = new Date(Date.now() - HOUR).toISOString();
+  const { data: recent } = await service
+    .from("video_access_logs").select("video_id, blocked, created_at")
+    .eq("user_id", user.id).gte("created_at", since);
+  const rows = recent ?? [];
+  const opened = new Set(rows.filter((r) => !r.blocked).map((r) => r.video_id));
 
-    if (!opened.has(video.id) && opened.size >= LIMIT_PER_HOUR) {
-      const firstBlock = !rows.some((r) => r.blocked);
-      await service.from("video_access_logs").insert({ user_id: user.id, video_id: video.id, class_id: video.class_id, blocked: true, ip });
-      if (firstBlock) await alertAdmins(service, user.email ?? user.id, user.id, opened.size, ip);
-      return jsonError("คุณเปิดบทเรียนถี่เกินไป กรุณาพักสักครู่แล้วลองใหม่ (ประมาณ 1 ชั่วโมง)", 429);
-    }
+  if (!staff && !opened.has(video.id) && opened.size >= LIMIT_PER_HOUR) {
+    const firstBlock = !rows.some((r) => r.blocked);
+    await service.from("video_access_logs").insert({ user_id: user.id, video_id: video.id, class_id: video.class_id, blocked: true, ip });
+    if (firstBlock) await alertAdmins(service, user.email ?? user.id, user.id, opened.size, ip);
+    return jsonError("คุณเปิดบทเรียนถี่เกินไป กรุณาพักสักครู่แล้วลองใหม่ (ประมาณ 1 ชั่วโมง)", 429);
+  }
 
-    const dupe = rows.some((r) => r.video_id === video.id && !r.blocked && Date.now() - Date.parse(r.created_at) < DEDUPE_MS);
-    if (!dupe) {
-      await service.from("video_access_logs").insert({ user_id: user.id, video_id: video.id, class_id: video.class_id, ip });
-    }
+  const dupe = rows.some((r) => r.video_id === video.id && !r.blocked && Date.now() - Date.parse(r.created_at) < DEDUPE_MS);
+  if (!dupe) {
+    const { error } = await service.from("video_access_logs").insert({ user_id: user.id, video_id: video.id, class_id: video.class_id, ip });
+    if (error) console.error("video_access_logs insert failed", error.message);
   }
 
   const yt = youtubeId(video.video_url);

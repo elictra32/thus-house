@@ -8,8 +8,10 @@ export const metadata = { title: "ส่งอีเมล" };
 
 export default async function EmailPage() {
   const { service } = await requirePageAdmin("email");
-  const [{ data: classes }, { data: logs }] = await Promise.all([
+  const [{ data: classes }, { data: roles }, { data: members }, { data: logs }] = await Promise.all([
     service.from("classes").select("id, name").order("created_at"),
+    service.from("roles").select("id, name").order("name"),
+    service.from("users").select("id, name, email").order("created_at", { ascending: false }).limit(2000),
     service.from("admin_logs").select("*").eq("action", "email").order("created_at", { ascending: false }).limit(20),
   ]);
 
@@ -17,7 +19,7 @@ export default async function EmailPage() {
     <>
       <PageHeader title="ส่งอีเมลถึงสมาชิก" subtitle="ส่งผ่าน Brevo และ/หรือแจ้งเตือนในเว็บ" />
       <div className="grid gap-6 xl:grid-cols-[1fr_420px]">
-        <EmailForm classes={classes ?? []} brevoReady={!!process.env.BREVO_API_KEY} />
+        <EmailForm classes={classes ?? []} roles={roles ?? []} members={members ?? []} brevoReady={!!process.env.BREVO_API_KEY} />
         <div className="card h-fit overflow-hidden">
           <h3 className="p-5 font-bold">ประวัติการส่ง</h3>
           {(logs as AdminLog[] | null)?.map((l) => {
