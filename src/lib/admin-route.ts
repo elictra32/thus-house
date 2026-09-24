@@ -1,5 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
+import { PUBLIC_DATA_TAG } from "./data";
 import type { SupabaseClient, User as AuthUser } from "@supabase/supabase-js";
 import { jsonError, requireApiAdmin } from "./auth";
 import { ValidationError } from "./validate";
@@ -16,7 +18,10 @@ export function adminRoute<P = Record<string, string>>(
     const auth = await requireApiAdmin(perm);
     if (!auth.ok) return auth.res;
     try {
-      return await handler(req, { service: auth.service, email: auth.email, user: auth.user, perms: auth.perms }, params);
+      const res = await handler(req, { service: auth.service, email: auth.email, user: auth.user, perms: auth.perms }, params);
+      // Admin แก้ข้อมูล → ล้างแคชหน้าสาธารณะ (คอร์ส / รูป) ให้หน้าแรกเห็นของใหม่ทันที
+      if (req.method !== "GET" && res.ok) revalidateTag(PUBLIC_DATA_TAG);
+      return res;
     } catch (err) {
       if (err instanceof ValidationError) return jsonError(err.message, 400);
       console.error(err);

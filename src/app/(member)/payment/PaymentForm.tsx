@@ -6,6 +6,7 @@ import { Select } from "@/components/Input";
 import { api } from "@/lib/api-client";
 import { BANK, SLIP_MAX_BYTES, SLIP_TYPES, baht } from "@/lib/utils";
 import type { Class } from "@/types/database";
+import { shrinkImage } from "@/lib/shrink-image";
 
 export default function PaymentForm({ classes, initialClassId }: { classes: Class[]; initialClassId?: string }) {
   const [classId, setClassId] = useState(
@@ -46,7 +47,7 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
     if (!file) return setError("กรุณาแนบสลิป");
     const form = new FormData();
     form.append("class_id", classId);
-    form.append("slip", file);
+    form.append("slip", await shrinkImage(file));
     setLoading(true);
     try {
       await api.post("/api/purchases/upload-slip", form);

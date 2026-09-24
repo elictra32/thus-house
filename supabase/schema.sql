@@ -259,7 +259,7 @@ alter table public.notifications enable row level security;
 alter table public.admin_logs enable row level security;
 
 drop policy if exists "users: read own" on public.users;
-create policy "users: read own" on public.users for select using (auth.uid() = id);
+create policy "users: read own" on public.users for select using ((select auth.uid()) = id);
 -- ไม่มี policy update: การแก้โปรไฟล์ทำผ่าน API (แก้ได้แค่ name/phone) เพื่อกันผู้ใช้แก้ status ตัวเอง
 drop policy if exists "users: update own" on public.users;
 
@@ -267,29 +267,29 @@ drop policy if exists "classes: public read" on public.classes;
 create policy "classes: public read" on public.classes for select using (true);
 
 drop policy if exists "purchases: read own" on public.purchases;
-create policy "purchases: read own" on public.purchases for select using (auth.uid() = user_id);
+create policy "purchases: read own" on public.purchases for select using ((select auth.uid()) = user_id);
 
 -- ดูรายการวิดีโอได้เฉพาะคอร์สที่ซื้อ ได้รับอนุมัติ และยังไม่หมดอายุ
 drop policy if exists "videos: purchased only" on public.videos;
 create policy "videos: purchased only" on public.videos for select using (
   exists (
     select 1 from public.purchases p
-    where p.class_id = videos.class_id and p.user_id = auth.uid() and p.status = 'approved'
+    where p.class_id = videos.class_id and p.user_id = (select auth.uid()) and p.status = 'approved'
       and (p.expires_at is null or p.expires_at > now())
   )
 );
 
 drop policy if exists "watched: own" on public.watched_videos;
 create policy "watched: own" on public.watched_videos for all
-  using (auth.uid() = user_id) with check (auth.uid() = user_id);
+  using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 drop policy if exists "live: members read" on public.live_classes;
-create policy "live: members read" on public.live_classes for select using (auth.role() = 'authenticated');
+create policy "live: members read" on public.live_classes for select using ((select auth.role()) = 'authenticated');
 
 drop policy if exists "notifications: read own" on public.notifications;
-create policy "notifications: read own" on public.notifications for select using (auth.uid() = user_id);
+create policy "notifications: read own" on public.notifications for select using ((select auth.uid()) = user_id);
 drop policy if exists "notifications: update own" on public.notifications;
-create policy "notifications: update own" on public.notifications for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+create policy "notifications: update own" on public.notifications for update using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);
 
 -- admin_logs: ไม่มี policy = ผู้ใช้ทั่วไปอ่าน/เขียนไม่ได้เลย
 
@@ -371,3 +371,39 @@ revoke all on public.lesson_comments, public.lesson_comment_likes, public.video_
 -- สิทธิ์ community (ตอบ/ลบคอมเมนต์ + ตอบข้อความถึงผู้สอน) ให้ Role ระบบเดิม
 update public.roles set permissions = array_append(permissions, 'community')
 where id in ('admin', 'head_admin') and not ('community' = any(permissions));
+
+-- ---------- หน้า Admin → Usage ----------
+-- ขนาดฐานข้อมูล / ไฟล์ / จำนวนผู้ใช้ — เรียกได้เฉพาะ service role
+create or replace function public.admin_usage()
+returns json language sql stable security definer set search_path = '' as $$
+  select json_build_object(
+    'db_bytes', pg_database_size(current_database()),
+    'storage_bytes', (select coalesce(sum((o.metadata->>'size')::bigint), 0) from storage.objects o),
+    'storage_by_bucket', (
+      select coalesce(json_object_agg(x.bucket_id, x.bytes), '{}'::json)
+      from (select o.bucket_id, sum((o.metadata->>'size')::bigint) as bytes from storage.objects o group by o.bucket_id) x
+    ),
+    'auth_users', (select count(*) from auth.users),
+    'mau', (select count(*) from auth.users u where u.last_sign_in_at > now() - interval '30 days'),
+    'rows', (
+      select coalesce(json_object_agg(s.relname, s.n_live_tup), '{}'::json)
+      from pg_catalog.pg_stat_user_tables s where s.schemaname = 'public'
+    )
+  );
+$$;
+revoke execute on function public.admin_usage() from public, anon, authenticated;
+grant execute on function public.admin_usage() to service_role;
+
+-- ---------- ประสิทธิภาพ ----------
+create index if not exists instructor_messages_class on public.instructor_messages (class_id);
+create index if not exists lesson_comment_likes_user on public.lesson_comment_likes (user_id);
+create index if not exists lesson_comments_user on public.lesson_comments (user_id, created_at desc);
+create index if not exists video_access_logs_class on public.video_access_logs (class_id);
+create index if not exists video_access_logs_video on public.video_access_logs (video_id);
+create index if not exists video_likes_user on public.video_likes (user_id);
+create index if not exists notifications_user_time on public.notifications (user_id, created_at desc);
+-- index ซ้ำจาก schema รุ่นเก่า (มีตัวที่เหมือนกันอยู่แล้ว)
+drop index if exists public.idx_purchases_status;
+drop index if exists public.idx_purchases_user_id;
+drop index if exists public.idx_videos_order_index;
+drop index if exists public.idx_watched_videos_user_id;
