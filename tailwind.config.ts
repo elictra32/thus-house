@@ -2,7 +2,7 @@ import type { Config } from "tailwindcss";
 
 // Theme ตาม CI ของ THUS House of Traders
 // - แอป (Dashboard / Admin): พื้นม่วงเข้มแบบแบนเนอร์โลโก้
-// - หน้า Landing: พื้นกระดาษสีอ่อน + ตัวอักษรหนาสีเข้ม + gradient ม่วง/ฟ้า/ส้ม แบบสไลด์ THUS MEMBER BENEFITS
+// - หน้า Landing: พื้นกระดาษสีอ่อน + ตัวอักษรหนาสีเข้ม (ฟอนต์ Inter + IBM Plex Sans Thai ทั้งเว็บ) + gradient ม่วง/ฟ้า/ส้ม แบบสไลด์ THUS MEMBER BENEFITS
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
@@ -28,7 +28,6 @@ const config: Config = {
       },
       fontFamily: {
         sans: ["Inter", "IBM Plex Sans Thai", "system-ui", "sans-serif"],
-        display: ["Archivo", "IBM Plex Sans Thai", "Inter", "sans-serif"],
       },
     },
   },

@@ -100,7 +100,7 @@ export default async function Landing() {
         <div className="relative grid items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
           <div>
             <p className="text-xs font-bold tracking-[3px] text-plum-700">THUS HOUSE OF TRADERS</p>
-            <h1 className="mt-4 font-display text-[64px] font-black uppercase leading-[0.9] tracking-[-2px] text-charcoal sm:text-[88px] xl:text-[108px]">
+            <h1 className="mt-4 text-[64px] font-extrabold uppercase leading-[0.9] tracking-[-2px] text-charcoal sm:text-[88px] xl:text-[108px]">
               THUS
               <br />
               Member
@@ -138,7 +138,7 @@ export default async function Landing() {
         <div className="relative mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-charcoal/10 bg-charcoal/10 lg:grid-cols-4">
           {stats.map((s) => (
             <div key={s.label} className="bg-paper-light/90 p-6">
-              <div className="font-display text-3xl font-black tracking-[-1px] text-plum-900 md:text-4xl">{s.value}</div>
+              <div className="text-3xl font-extrabold tracking-[-1px] text-plum-900 md:text-4xl">{s.value}</div>
               <div className="mt-1 text-sm text-charcoal/70">{s.label}</div>
             </div>
           ))}
@@ -148,13 +148,13 @@ export default async function Landing() {
       {/* ---------- Highlights ---------- */}
       <section id="highlights" className="scroll-mt-20 px-[6vw] py-20">
         <p className="text-xs font-bold tracking-[3px] text-plum-700">HIGHLIGHTS</p>
-        <h2 className="mt-3 max-w-3xl font-display text-4xl font-black tracking-[-1.5px] md:text-5xl">
+        <h2 className="mt-3 max-w-3xl text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">
           เรียนจากตลาดจริง ไปพร้อมกัน 1 ปีเต็ม
         </h2>
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {highlights.map((h, i) => (
             <div key={h.title} className="rounded-2xl border border-charcoal/10 bg-paper-light p-6 transition hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-25px_#2d183c66]">
-              <div className="font-display text-sm font-black text-plum-500">{String(i + 1).padStart(2, "0")}</div>
+              <div className="text-sm font-extrabold text-plum-500">{String(i + 1).padStart(2, "0")}</div>
               <h3 className="mt-3 text-xl font-bold text-plum-900">{h.title}</h3>
               <p className="mt-2 leading-relaxed text-charcoal/75">{h.body}</p>
             </div>
@@ -170,12 +170,12 @@ export default async function Landing() {
         <Glow className="-right-24 top-0 h-[360px] w-[360px] bg-glow-blue/25" />
         <div className="relative">
           <p className="text-xs font-bold tracking-[3px] text-plum-300">MEMBER BENEFITS</p>
-          <h2 className="mt-3 font-display text-4xl font-black tracking-[-1.5px] md:text-6xl">สิทธิประโยชน์สมาชิก</h2>
+          <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-6xl">สิทธิประโยชน์สมาชิก</h2>
           <div className="mt-12 grid gap-5 lg:grid-cols-3">
             {benefits.map((b) => (
               <div key={b.title} className="rounded-2xl border border-white/10 bg-white/[.06] p-7 backdrop-blur">
-                <div className="font-display text-5xl font-black text-white/15">{b.no}</div>
-                <h3 className="mt-2 font-display text-2xl font-black tracking-[-0.5px]">{b.title}</h3>
+                <div className="text-5xl font-extrabold text-white/15">{b.no}</div>
+                <h3 className="mt-2 text-2xl font-extrabold tracking-[-0.5px]">{b.title}</h3>
                 <ul className="mt-5 space-y-3">
                   {b.items.map((it) => (
                     <li key={it} className="flex gap-3 leading-relaxed text-white/85">
@@ -196,7 +196,7 @@ export default async function Landing() {
         <div className="relative grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
           <div>
             <p className="text-xs font-bold tracking-[3px] text-plum-700">CURRICULUM</p>
-            <h2 className="mt-3 font-display text-4xl font-black tracking-[-1.5px] md:text-5xl">หัวข้อ Class ปรับพื้นฐาน</h2>
+            <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">หัวข้อ Class ปรับพื้นฐาน</h2>
             <p className="mt-4 max-w-md leading-relaxed text-charcoal/75">
               20 บทเรียนปูพื้นให้พร้อมก่อนเรียนสด ตั้งแต่พื้นฐาน Futures, การคุมขนาดสถานะ, เครื่องมือ TradingView
               ไปจนถึงการสร้างระบบเทรดของตัวเอง
@@ -206,7 +206,7 @@ export default async function Landing() {
           <ol className="grid gap-x-8 sm:grid-cols-2">
             {curriculum.map((c, i) => (
               <li key={c} className="flex items-baseline gap-4 border-b border-charcoal/10 py-3.5">
-                <span className="w-7 shrink-0 font-display text-sm font-black text-plum-500">{String(i + 1).padStart(2, "0")}</span>
+                <span className="w-7 shrink-0 text-sm font-extrabold text-plum-500">{String(i + 1).padStart(2, "0")}</span>
                 <span className="font-medium">{c}</span>
               </li>
             ))}
@@ -218,7 +218,7 @@ export default async function Landing() {
       {classes.length > 0 && (
         <section id="courses" className="scroll-mt-20 bg-bg px-[6vw] py-20 text-ink">
           <p className="text-xs font-bold tracking-[3px] text-plum-300">CLASSES</p>
-          <h2 className="mt-3 font-display text-4xl font-black tracking-[-1.5px]">คลาสที่เปิดอยู่</h2>
+          <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px]">คลาสที่เปิดอยู่</h2>
           <div className="mt-8 grid gap-[18px] md:grid-cols-3">
             {classes.map((c, i) => (
               <ClassCard key={c.id} cls={c} index={i} href={`/classes/${c.id}`} />
@@ -231,7 +231,7 @@ export default async function Landing() {
       <section className="relative overflow-hidden px-[6vw] py-24 text-center">
         <Glow className="left-1/2 top-1/2 h-[320px] w-[620px] -translate-x-1/2 -translate-y-1/2 bg-glow-lilac/45" />
         <div className="relative">
-          <h2 className="font-display text-4xl font-black uppercase tracking-[-1.5px] md:text-6xl">Become a THUS Member</h2>
+          <h2 className="text-4xl font-extrabold uppercase tracking-[-1.5px] md:text-6xl">Become a THUS Member</h2>
           <p className="mx-auto mt-4 max-w-xl text-lg text-charcoal/75">
             เริ่มพัฒนาการเทรดอย่างเป็นระบบไปพร้อมกับทีม THUS House of Traders
           </p>
