@@ -161,3 +161,4 @@ Class ปรับพื้นฐาน 20 บท: พื้นฐาน Futures
 - **Journal หลายพอร์ต:** TFEX / Forex / หุ้นไทย / หุ้น US / Crypto (สกุลเงิน/หน่วย/สินค้าตามตลาด) · ไม้เดิมทั้งหมดอยู่พอร์ต "TFEX"
 - **แหล่งราคา Journal:** Google Sheet ของเจ้าของ (สูตร Apps Script `TV_CLOSE_PRICE` สำหรับ TFEX + `GOOGLEFINANCE` หุ้นไทย/US) ผ่าน `/api/symbols?token=` + CSV ที่ Publish · API ฟรีที่ใช้ได้จากเซิร์ฟเวอร์: Binance/OKX/CoinGecko (crypto), Frankfurter ECB (forex รายวัน), PAXG (ทอง) · ใช้ไม่ได้: Yahoo (429), Stooq (404), TFEX/SET (Incapsula 403)
 - เจ้าของบอก "จัดไปเลย deploy เลย เชื่อมือ" → งานชุดใหญ่ merge ได้เลยไม่ต้องส่งภาพก่อน (ครั้งนั้น)
+- **Journal Diary:** จดภาพรวมตลาดรายวัน (มุมมอง ขาขึ้น/ไซด์เวย์/ขาลง) · พิมพ์ `@` อ้างถึงไม้ที่บันทึกไว้ (ทุกพอร์ต) · พิมพ์ `#` ใส่แท็ก แล้วกดแท็กเพื่อย้อนดูบันทึกทั้งหมดของแท็กนั้น · ตาราง `diary_entries` · หน้าไม้มีช่อง Diary ที่อ้างถึงไม้นั้น ปฏิทินโชว์ Diary ของวัน
