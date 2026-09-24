@@ -115,6 +115,73 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
+-- ฟังก์ชัน trigger ไม่ควรเรียกผ่าน /rest/v1/rpc ได้
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+-- ---------- ปรับฐานข้อมูลเดิม (schema รุ่นก่อน) ให้ตรงกับโค้ด ----------
+-- ฐานข้อมูลที่สร้างจาก schema รุ่นแรกมี NOT NULL / CHECK / UNIQUE ที่โค้ดนี้ไม่ใช้ → ผ่อนหรือเปลี่ยนให้ตรง
+alter table public.users alter column name drop not null;
+alter table public.classes alter column instructor drop not null;
+alter table public.live_classes alter column instructor drop not null;
+alter table public.videos alter column order_index set default 0;
+alter table public.watched_videos add column if not exists created_at timestamptz not null default now();
+alter table public.notifications alter column message drop not null;
+alter table public.admin_logs alter column table_name drop not null;
+-- varchar(255/500) รุ่นเดิมสั้นกว่าที่ API รับ (title ≤ 300) → ใช้ text
+alter table public.videos alter column title type text;
+alter table public.live_classes alter column title type text;
+alter table public.live_classes alter column zoom_link type text;
+alter table public.live_classes alter column youtube_live_url type text;
+alter table public.live_classes alter column discord_link type text;
+
+-- ประเภทแจ้งเตือนที่โค้ดใช้: payment, payment_approved, payment_rejected, broadcast
+alter table public.notifications drop constraint if exists notifications_type_check;
+
+-- สถานะ Live: upcoming | live | ended (รุ่นเดิมใช้ scheduled/cancelled)
+alter table public.live_classes drop constraint if exists live_classes_status_check;
+update public.live_classes set status = 'upcoming' where status = 'scheduled';
+update public.live_classes set status = 'ended' where status = 'cancelled';
+alter table public.live_classes alter column status set default 'upcoming';
+alter table public.live_classes add constraint live_classes_status_check
+  check (status in ('upcoming', 'live', 'ended'));
+
+-- record_id เก็บได้ทั้ง uuid และค่าอื่น
+alter table public.admin_logs alter column record_id type text using record_id::text;
+
+-- ฟังก์ชันจาก schema รุ่นเดิม (โค้ดไม่ได้ใช้)
+-- get_upcoming_live_classes คืนค่า varchar และกรอง 'scheduled' ซึ่งไม่ตรงกับตารางแล้ว → ลบ
+drop function if exists public.get_upcoming_live_classes();
+-- ที่เหลือล็อก search_path
+do $$
+declare f regprocedure;
+begin
+  for f in select p.oid::regprocedure from pg_proc p
+    where p.pronamespace = 'public'::regnamespace
+      and p.proname in ('get_user_purchases', 'get_upcoming_live_classes', 'get_user_class_progress')
+  loop
+    execute format('alter function %s set search_path = public', f);
+  end loop;
+end $$;
+
+-- เดิม unique(user_id, class_id) ทำให้ส่งสลิปใหม่หลังถูกปฏิเสธไม่ได้
+-- → จำกัดแค่ห้ามมี pending/approved ซ้ำในคอร์สเดียวกัน
+alter table public.purchases drop constraint if exists purchases_user_id_class_id_key;
+create unique index if not exists purchases_one_active_idx
+  on public.purchases(user_id, class_id) where status in ('pending', 'approved');
+
+-- policy รุ่นเดิม: ให้ผู้ใช้แก้ status ตัวเอง / สร้าง purchase ที่อนุมัติแล้วเองได้ → ลบทิ้ง
+drop policy if exists "Users can update own profile" on public.users;
+drop policy if exists "Users can view own profile" on public.users;
+drop policy if exists "Classes are visible to all authenticated users" on public.classes;
+drop policy if exists "Admins can update purchases" on public.purchases;
+drop policy if exists "Admins can view all purchases" on public.purchases;
+drop policy if exists "Users can create own purchases" on public.purchases;
+drop policy if exists "Users can view own purchases" on public.purchases;
+drop policy if exists "Users can view videos of purchased classes" on public.videos;
+drop policy if exists "Users can manage own watched videos" on public.watched_videos;
+drop policy if exists "Live classes visible to authenticated users" on public.live_classes;
+drop policy if exists "Users can view own notifications" on public.notifications;
+drop policy if exists "Only admins can view logs" on public.admin_logs;
 
 -- ---------- Row Level Security ----------
 -- ผู้ใช้ทั่วไปเข้าถึงได้เฉพาะข้อมูลของตัวเอง
