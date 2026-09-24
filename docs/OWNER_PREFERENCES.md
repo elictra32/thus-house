@@ -149,3 +149,5 @@ Class ปรับพื้นฐาน 20 บท: พื้นฐาน Futures
 - **ราคาสินค้า:** เจ้าของให้เลือกแหล่ง "ฟรีและดีที่สุด" เอง · อย่างน้อยอัปเดตทุกชั่วโมง ถ้า realtime ได้ยิ่งดี
 - **ของจริงที่สร้างแล้ว:** Supabase project `thus-journal` (ref `kyqbwybhmdxrzegxrehl`, ap-southeast-1, แพ็กฟรี — ครบโควตาฟรี 2 โปรเจกต์ของ org แล้ว) · โค้ดอยู่ repo `elictra32/thus-journal` (เจ้าของต้องสร้าง repo เอง — GitHub App สร้าง repo ให้ไม่ได้)
 - ค่าคอมตั้งต้น (จากไฟล์ทีม, ต่อสัญญา ไป-กลับ): S50 53.5 · GO 117.7 · MGO 11.77 · SVF 85.6 · USD 21.4 · USDJPY 21.62 (ตัวคูณ 300) · หุ้น Futures คิดเป็น % แก้เองรายไม้
+- **เว็บ:** https://thus-journal.vercel.app (Vercel project `thus-journal`, region sin1, Hobby) · push ตรงเข้า main ด้วยผู้เขียนที่ไม่ใช่สมาชิก Vercel จะ **BLOCKED** → deploy ผ่าน MCP `create_deployment` (gitSource + sha) หรือให้เจ้าของ merge PR
+- **ผลทดสอบแหล่งราคา (24 ก.ย. 2026):** TFEX/SET API ถูก Incapsula บล็อก (403) และ Yahoo ตอบ 429 จากทั้ง Supabase และ Vercel → ดึงราคาฟรีจากเซิร์ฟเวอร์ไม่ได้ · ทางจริง = Settrade Open API (ฟรีผ่านโบรกเกอร์) · TradingView ไม่มี API ราคาฟรี (ใช้ได้แค่ widget ดูกราฟฝั่งผู้ใช้)
