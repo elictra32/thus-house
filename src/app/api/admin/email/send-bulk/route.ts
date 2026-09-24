@@ -40,7 +40,7 @@ export const POST = adminRoute("email", async (req, { service, email }) => {
         headers: { "api-key": apiKey, "Content-Type": "application/json", accept: "application/json" },
         body: JSON.stringify({
           sender: {
-            email: process.env.BREVO_SENDER_EMAIL ?? "no-reply@thushouse.live",
+            email: process.env.BREVO_SENDER_EMAIL ?? "no-reply@thushouse.com",
             name: process.env.BREVO_SENDER_NAME ?? "THUS House",
           },
           subject,
