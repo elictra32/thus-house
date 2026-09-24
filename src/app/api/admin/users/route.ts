@@ -1,4 +1,5 @@
 import { adminRoute, check, ok } from "@/lib/admin-route";
+import { unconfirmedUserIds } from "@/lib/email-confirm";
 
 const PAGE_SIZE = 20;
 
@@ -8,14 +9,25 @@ export const GET = adminRoute(async (req, { service }) => {
   const q = sp.get("q")?.trim();
   const status = sp.get("status");
 
+  const unconfirmed = await unconfirmedUserIds(service);
   let query = service.from("users").select("*", { count: "exact" }).order("created_at", { ascending: false });
   if (q) {
     const safe = q.replace(/[,()%]/g, " ");
     query = query.or(`name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`);
   }
-  if (status) query = query.eq("status", status);
+  // status=unconfirmed → เฉพาะบัญชีที่รอยืนยันอีเมล
+  if (status === "unconfirmed") {
+    if (!unconfirmed.size) return ok({ users: [], total: 0, page, pageSize: PAGE_SIZE, unconfirmedCount: 0 });
+    query = query.in("id", [...unconfirmed]);
+  } else if (status) query = query.eq("status", status);
 
   const res = await query.range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
   const users = check(res);
-  return ok({ users, total: res.count ?? 0, page, pageSize: PAGE_SIZE });
+  return ok({
+    users: users.map((u) => ({ ...u, email_confirmed: !unconfirmed.has(u.id) })),
+    total: res.count ?? 0,
+    page,
+    pageSize: PAGE_SIZE,
+    unconfirmedCount: unconfirmed.size,
+  });
 });

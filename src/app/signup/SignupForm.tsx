@@ -22,7 +22,7 @@ export default function SignupForm() {
   const [f, setF] = useState<Fields>({ name: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState<Partial<Fields>>({});
   const [error, setError] = useState("");
-  const [done, setDone] = useState(false);
+  const [done, setDone] = useState<"" | "email" | "admin">("");
   const [loading, setLoading] = useState(false);
 
   const set = (k: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
@@ -35,13 +35,13 @@ export default function SignupForm() {
     if (Object.keys(v).length) return;
     setLoading(true);
     try {
-      const res = await api.post<{ needsConfirmation: boolean }>("/api/auth/signup", {
+      const res = await api.post<{ needsConfirmation: boolean; pendingAdmin?: boolean }>("/api/auth/signup", {
         name: f.name.trim(),
         email: f.email.trim(),
         password: f.password,
       });
       if (res.needsConfirmation) {
-        setDone(true);
+        setDone(res.pendingAdmin ? "admin" : "email");
       } else {
         router.push("/dashboard");
         router.refresh();
@@ -52,6 +52,14 @@ export default function SignupForm() {
       setLoading(false);
     }
   }
+
+  if (done === "admin")
+    return (
+      <div className="rounded-lg bg-warning/15 p-4 text-sm text-amber-200">
+        สมัครสำเร็จ! บัญชี <b>{f.email}</b> อยู่ระหว่างรอทีมงานยืนยัน
+        เมื่อยืนยันแล้วจะ<Link href="/login" className="underline">เข้าสู่ระบบ</Link>ได้ทันที
+      </div>
+    );
 
   if (done)
     return (

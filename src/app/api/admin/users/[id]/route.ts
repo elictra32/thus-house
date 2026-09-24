@@ -1,6 +1,7 @@
 import { adminRoute, check, ok, readJson, must } from "@/lib/admin-route";
 import { jsonError, logAdmin } from "@/lib/auth";
 import { oneOf, str } from "@/lib/validate";
+import { unconfirmedUserIds } from "@/lib/email-confirm";
 
 type P = { id: string };
 
@@ -17,7 +18,8 @@ export const GET = adminRoute<P>(async (_req, { service }, { id }) => {
     const cid = w.videos?.class_id;
     if (cid) watchedByClass[cid] = (watchedByClass[cid] ?? 0) + 1;
   }
-  return ok({ user: user.data, purchases: check(purchases), watchedByClass });
+  const emailConfirmed = !(await unconfirmedUserIds(service)).has(id);
+  return ok({ user: user.data, purchases: check(purchases), watchedByClass, emailConfirmed });
 });
 
 export const PUT = adminRoute<P>(async (req, { service, email }, { id }) => {

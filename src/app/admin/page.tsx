@@ -3,17 +3,26 @@ import PageHeader, { StatCard } from "@/components/admin/PageHeader";
 import { ChartCard, Donut, LineSeries } from "@/components/admin/Charts";
 import { requirePageAdmin } from "@/lib/auth";
 import { computeAnalytics } from "@/lib/analytics";
+import { unconfirmedUserIds } from "@/lib/email-confirm";
 import { baht } from "@/lib/utils";
 
 export const metadata = { title: "Dashboard" };
 
 export default async function AdminDashboard() {
   const { service } = await requirePageAdmin();
-  const a = await computeAnalytics(service);
+  const [a, unconfirmed] = await Promise.all([computeAnalytics(service), unconfirmedUserIds(service)]);
 
   return (
     <>
       <PageHeader title="Admin Dashboard" subtitle="ภาพรวมของ Thushouse" />
+      {unconfirmed.size > 0 && (
+        <Link
+          href="/admin/members?status=unconfirmed"
+          className="mb-6 block rounded-xl border border-warning/30 bg-warning/10 p-4 text-sm text-amber-200"
+        >
+          มีสมาชิกรอยืนยันอีเมล {unconfirmed.size} คน — คลิกเพื่อยืนยันบัญชี →
+        </Link>
+      )}
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-5">
         <StatCard label="สมาชิกทั้งหมด" value={a.totals.users.toLocaleString()} />
         <StatCard label="รายได้รวม" value={baht(a.totals.revenue)} />
