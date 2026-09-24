@@ -9,6 +9,7 @@ export interface User {
   phone: string | null;
   nickname: string | null;
   member_code: string | null; // รหัสสมาชิก (Admin กำหนด)
+  discord_id: string | null; // Discord user ID สำหรับกดอนุมัติใน Discord (Head Admin กำหนด)
   status: UserStatus;
   membership_start: string | null;
   membership_end: string | null;
@@ -51,6 +52,7 @@ export interface Purchase {
   approved_by: string | null;
   approved_at: string | null;
   expires_at: string | null; // วันหมดสิทธิ์เรียน · null = ไม่หมดอายุ
+  discord_message_id: string | null; // ข้อความรอตรวจในห้องอนุมัติ Discord
   created_at: string;
 }
 
