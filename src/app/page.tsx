@@ -118,9 +118,12 @@ export default async function Landing() {
 
         <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-14">
           <div>
-            <p className="flex items-center gap-3 text-[11px] font-bold tracking-[0.32em] text-accent-muted sm:text-xs">
+            {/* ข้อความส่วนหัวจัดกึ่งกลางในคอลัมน์ */}
+            <div className="text-center">
+            <p className="flex items-center justify-center gap-3 text-[11px] font-bold tracking-[0.32em] text-accent-muted sm:text-xs">
               <span aria-hidden className="h-px w-8 bg-accent-muted/40" />
               THUS HOUSE OF TRADERS
+              <span aria-hidden className="h-px w-8 bg-accent-muted/40" />
             </p>
 
             <h1 className="mt-5 text-[clamp(3.6rem,12vw,6rem)] font-extrabold uppercase leading-[0.86] xl:text-[7rem] tracking-[-0.04em] text-charcoal">
@@ -129,7 +132,7 @@ export default async function Landing() {
               Member
             </h1>
 
-            <p className="mt-5 w-fit bg-gradient-to-r from-plum-700 via-[#a45c95] to-glow-orange dark:from-[#cdb6ea] dark:via-[#e59ac0] dark:to-glow-orange bg-clip-text pb-1 text-[clamp(1.4rem,3.6vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-transparent">
+            <p className="mx-auto mt-5 w-fit bg-gradient-to-r from-plum-700 via-[#a45c95] to-glow-orange dark:from-[#cdb6ea] dark:via-[#e59ac0] dark:to-glow-orange bg-clip-text pb-1 text-[clamp(1.4rem,3.6vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-transparent">
               Winners Average Winners
             </p>
 
@@ -152,6 +155,7 @@ export default async function Landing() {
                 ]}
               </Lines>
             </p>
+            </div>
 
             <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
               <ButtonLink href="/signup" variant="plum" className="h-12 px-6 text-base">
