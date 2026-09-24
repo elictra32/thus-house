@@ -17,6 +17,8 @@ type YTPlayer = {
   mute(): void;
   unMute(): void;
   isMuted(): boolean;
+  loadModule(m: string): void;
+  unloadModule(m: string): void;
   destroy(): void;
 };
 type YTNamespace = {
@@ -83,6 +85,9 @@ export default function YouTubeLesson({
   const [duration, setDuration] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [muted, setMuted] = useState(false);
+  // คำบรรยาย (CC) ปิดเป็นค่าเริ่มต้น — YouTube อาจเปิดเองตามบัญชีผู้ชม จึงสั่งปิดซ้ำทุกครั้งที่เริ่มเล่น
+  const [cc, setCc] = useState(false);
+  const ccRef = useRef(false);
   const [showControls, setShowControls] = useState(true);
   // บางเครื่อง (เช่น iPhone) ไม่ยอมให้สั่งเล่นจากปุ่มของเว็บในครั้งแรก → เปิดช่องกลางให้แตะปุ่มเล่นของ YouTube เอง
   const [nativeStart, setNativeStart] = useState(false);
@@ -120,6 +125,7 @@ export default function YouTubeLesson({
             setPlaying(e.data === PLAYING);
             setEnded(e.data === ENDED);
             if (e.data === PLAYING) {
+              if (!ccRef.current) player.current?.unloadModule("captions");
               startedRef.current = true;
               setStarted(true);
               setDuration(player.current?.getDuration() ?? 0);
@@ -174,6 +180,14 @@ export default function YouTubeLesson({
     const next = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length];
     player.current?.setPlaybackRate(next);
     setSpeed(next);
+  };
+  const toggleCc = () => {
+    const p = player.current;
+    if (!p) return;
+    if (cc) p.unloadModule("captions");
+    else p.loadModule("captions");
+    ccRef.current = !cc;
+    setCc(!cc);
   };
   const toggleMute = () => {
     const p = player.current;
@@ -275,6 +289,15 @@ export default function YouTubeLesson({
             {formatDuration(Math.floor(time))} / {formatDuration(Math.floor(duration))}
           </span>
           <div className="ml-auto flex items-center gap-2 sm:gap-3 md:gap-4">
+            <button
+              type="button"
+              onClick={toggleCc}
+              aria-label={cc ? "ปิดคำบรรยาย" : "เปิดคำบรรยาย"}
+              aria-pressed={cc}
+              className={`rounded-md border px-1.5 py-0.5 text-[11px] font-bold ${cc ? "border-white bg-white text-black" : "border-white/50 text-white/70 line-through decoration-2"}`}
+            >
+              CC
+            </button>
             <button type="button" onClick={changeSpeed} aria-label="ความเร็ว" className="rounded-md bg-white/15 px-2 py-0.5 text-xs font-bold">
               {speed}x
             </button>
