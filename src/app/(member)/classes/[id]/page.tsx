@@ -49,7 +49,7 @@ export default async function ClassPage({ params, searchParams }: { params: { id
           {access.inactive ? (
             <>
               <h2 className="mt-4 text-xl font-bold">บัญชีของคุณไม่ได้อยู่ในสถานะใช้งาน</h2>
-              <p className="mt-2 text-sm text-muted">กรุณาติดต่อทีมงาน Thushouse เพื่อเปิดใช้งานบัญชีอีกครั้ง</p>
+              <p className="mt-2 text-sm text-muted">กรุณาติดต่อทีมงาน THUS House เพื่อเปิดใช้งานบัญชีอีกครั้ง</p>
             </>
           ) : access.pending ? (
             <>

@@ -11,7 +11,7 @@ export default function MobileMenu({ links, loggedIn }: { links: { href: string;
         ☰
       </button>
       {open && (
-        <div className="absolute inset-x-0 top-[76px] flex flex-col gap-1 border-b border-line bg-panel p-4">
+        <div className="absolute inset-x-0 top-[76px] flex flex-col gap-1 border-b border-line bg-panel p-4 text-ink">
           {links.map((l) => (
             <Link key={l.href} href={l.href} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 hover:bg-raised">
               {l.label}

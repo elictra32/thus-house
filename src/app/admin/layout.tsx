@@ -4,7 +4,7 @@ import AdminNav from "@/components/admin/AdminNav";
 import { requirePageAdmin } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
-export const metadata = { title: { default: "Admin", template: "%s · Admin · Thushouse" } };
+export const metadata = { title: { default: "Admin", template: "%s · Admin · THUS House" } };
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user, perms } = await requirePageAdmin();

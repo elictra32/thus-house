@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: { default: "Thushouse — Learn. Build. Become.", template: "%s · Thushouse" },
-  description: "Thushouse Academy — พื้นที่เรียนรู้การลงทุนที่รวมบทเรียนคุณภาพไว้เป็นระบบ",
+  title: { default: "THUS House of Traders — THUS Member", template: "%s · THUS House" },
+  description: "THUS Members Class — หลักสูตรพัฒนาเทรดเดอร์ตั้งแต่พื้นฐานสู่มืออาชีพภายใน 1 ปีเต็ม เรียนสดทุกสัปดาห์ พร้อม Trader Support ส่วนตัว",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Inter:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap"
         />
       </head>
       <body>{children}</body>

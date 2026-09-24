@@ -4,11 +4,11 @@ import {
   ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 
-const PALETTE = ["#8b5cf6", "#22c55e", "#f59e0b", "#3b82f6", "#ec4899", "#14b8a6"];
-const axis = { stroke: "#737988", fontSize: 11, tickLine: false, axisLine: false };
+const PALETTE = ["#9d86bd", "#ec9e56", "#9195dc", "#e3a3a8", "#6fbf9a", "#c9b8dd"];
+const axis = { stroke: "#82788b", fontSize: 11, tickLine: false, axisLine: false };
 const tooltip = {
-  contentStyle: { background: "#171a21", border: "1px solid #292d38", borderRadius: 10, fontSize: 12 },
-  labelStyle: { color: "#f4f5f7" },
+  contentStyle: { background: "#261d2e", border: "1px solid #3b3045", borderRadius: 10, fontSize: 12 },
+  labelStyle: { color: "#f4f1f6" },
 };
 const bahtFmt = (v: number) => "฿" + v.toLocaleString("th-TH");
 
@@ -27,7 +27,7 @@ export function LineSeries({
   return (
     <ResponsiveContainer>
       <LineChart data={data} margin={{ left: 0, right: 8, top: 4 }}>
-        <CartesianGrid stroke="#20232b" vertical={false} />
+        <CartesianGrid stroke="#2b2233" vertical={false} />
         <XAxis dataKey={x} {...axis} tickFormatter={(v: string) => v.slice(5)} minTickGap={16} />
         <YAxis {...axis} width={money ? 64 : 32} tickFormatter={money ? bahtFmt : undefined} allowDecimals={false} />
         <Tooltip {...tooltip} formatter={(v) => (money ? bahtFmt(Number(v)) : String(v))} />
@@ -43,7 +43,7 @@ export function BarSeries({
   return (
     <ResponsiveContainer>
       <BarChart data={data} margin={{ left: 0, right: 8, top: 4 }}>
-        <CartesianGrid stroke="#20232b" vertical={false} />
+        <CartesianGrid stroke="#2b2233" vertical={false} />
         <XAxis dataKey={x} {...axis} />
         <YAxis {...axis} width={money ? 64 : 32} tickFormatter={money ? bahtFmt : undefined} allowDecimals={false} />
         <Tooltip {...tooltip} cursor={{ fill: "#ffffff08" }} formatter={(v) => (money ? bahtFmt(Number(v)) : String(v))} />

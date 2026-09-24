@@ -3,9 +3,9 @@ import { baht } from "@/lib/utils";
 import type { Class } from "@/types/database";
 
 const gradients = [
-  "from-[#21163a] to-[#151820]",
-  "from-[#16343b] to-[#151820]",
-  "from-[#3b2a16] to-[#151820]",
+  "from-[#3a2449] to-[#1d1624]",
+  "from-[#2a2340] to-[#1d1624]",
+  "from-[#4a2f3f] to-[#1d1624]",
 ];
 
 type Props = {
@@ -22,7 +22,7 @@ export default function ClassCard({ cls, index = 0, href, progress, action }: Pr
       <Link
         href={href}
         className={`flex h-[165px] items-end bg-gradient-to-br p-[18px] ${gradients[index % gradients.length]}`}
-        style={cls.thumbnail_url ? { backgroundImage: `linear-gradient(to top, #0b0d12cc, transparent), url(${cls.thumbnail_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+        style={cls.thumbnail_url ? { backgroundImage: `linear-gradient(to top, #140e19cc, transparent), url(${cls.thumbnail_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
       >
         <span className="rounded-[7px] border border-white/10 bg-white/[.08] px-2.5 py-1.5 text-[11px] uppercase">
           {cls.category || "COURSE"}

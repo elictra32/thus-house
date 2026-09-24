@@ -105,7 +105,7 @@ export default function ClassesAdmin() {
                   <td className="td">
                     <div className="flex items-center gap-3">
                       <div
-                        className="h-10 w-16 shrink-0 rounded-md bg-gradient-to-br from-[#21163a] to-[#151820] bg-cover bg-center"
+                        className="h-10 w-16 shrink-0 rounded-md bg-gradient-to-br from-[#3a2449] to-[#1d1624] bg-cover bg-center"
                         style={c.thumbnail_url ? { backgroundImage: `url(${c.thumbnail_url})` } : undefined}
                       />
                       <div>
