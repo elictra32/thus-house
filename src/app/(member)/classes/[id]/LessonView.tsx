@@ -2,6 +2,7 @@
 import { useState } from "react";
 import VideoPlayer from "@/components/VideoPlayer";
 import VideoList from "@/components/VideoList";
+import LessonComments from "@/components/LessonComments";
 import type { LessonVideo } from "@/types/database";
 
 export default function LessonView({
@@ -44,6 +45,7 @@ export default function LessonView({
             </button>
           )}
         </div>
+        <LessonComments key={current.id} videoId={current.id} />
       </div>
 
       <aside className="card h-fit overflow-hidden lg:sticky lg:top-24">
