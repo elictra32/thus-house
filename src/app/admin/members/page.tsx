@@ -46,7 +46,7 @@ export default function MembersPage({ searchParams }: { searchParams: { status?:
     <>
       <PageHeader title="สมาชิก" subtitle={data ? `ทั้งหมด ${data.total} คน` : undefined} />
       <div className="mb-5 flex flex-wrap gap-3">
-        <Input name="q" placeholder="ค้นหาชื่อ อีเมล เบอร์โทร..." value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:w-80" />
+        <Input name="q" placeholder="ค้นหาชื่อ ชื่อเล่น รหัส อีเมล เบอร์โทร..." value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:w-80" />
         <Select name="status" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} className="w-44">
           <option value="">ทุกสถานะ</option>
           <option value="active">ใช้งาน</option>
@@ -68,14 +68,16 @@ export default function MembersPage({ searchParams }: { searchParams: { status?:
         <PageLoading />
       ) : (
         <div className="card overflow-x-auto">
-          <table className="w-full min-w-[720px]">
+          <table className="w-full min-w-[900px] [&_td]:whitespace-nowrap [&_th]:whitespace-nowrap">
             <thead>
-              <tr><th className="th">ชื่อ</th><th className="th">อีเมล</th><th className="th">เบอร์โทร</th><th className="th">Role</th><th className="th">สถานะ</th><th className="th">สมัครเมื่อ</th><th className="th" /></tr>
+              <tr><th className="th">รหัส</th><th className="th">ชื่อ</th><th className="th">ชื่อเล่น</th><th className="th">อีเมล</th><th className="th">เบอร์โทร</th><th className="th">Role</th><th className="th">สถานะ</th><th className="th">สมัครเมื่อ</th><th className="th" /></tr>
             </thead>
             <tbody>
               {data?.users.map((u) => (
                 <tr key={u.id} className="hover:bg-raised/50">
+                  <td className="td whitespace-nowrap font-semibold text-brand-light">{u.member_code || <span className="font-normal text-subtle">-</span>}</td>
                   <td className="td font-medium">{u.name || "-"}</td>
+                  <td className="td">{u.nickname || "-"}</td>
                   <td className="td text-muted">{u.email}</td>
                   <td className="td text-muted">{u.phone || "-"}</td>
                   <td className="td">{u.roles?.name ?? u.role}</td>
@@ -94,7 +96,7 @@ export default function MembersPage({ searchParams }: { searchParams: { status?:
                   <td className="td text-right"><Link href={`/admin/members/${u.id}`} className="text-brand-light hover:underline">ดูรายละเอียด →</Link></td>
                 </tr>
               ))}
-              {data?.users.length === 0 && <tr><td className="td text-center text-muted" colSpan={7}>ไม่พบสมาชิก</td></tr>}
+              {data?.users.length === 0 && <tr><td className="td text-center text-muted" colSpan={9}>ไม่พบสมาชิก</td></tr>}
             </tbody>
           </table>
         </div>

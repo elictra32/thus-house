@@ -13,7 +13,7 @@ export const GET = adminRoute("members", async (req, { service }) => {
   let query = service.from("users").select("*, roles(name)", { count: "exact" }).order("created_at", { ascending: false });
   if (q) {
     const safe = q.replace(/[,()%]/g, " ");
-    query = query.or(`name.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`);
+    query = query.or(`name.ilike.%${safe}%,nickname.ilike.%${safe}%,member_code.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`);
   }
   // status=unconfirmed → เฉพาะบัญชีที่รอยืนยันอีเมล
   if (status === "unconfirmed") {

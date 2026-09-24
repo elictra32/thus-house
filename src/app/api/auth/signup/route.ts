@@ -6,29 +6,35 @@ import { isAdminEmail } from "@/lib/admin";
 import { isEmailDeliveryError, unconfirmedUserIds } from "@/lib/email-confirm";
 
 export async function POST(req: Request) {
-  const { name, email: rawEmail, password } = await req.json().catch(() => ({}));
-  if (!name || typeof name !== "string") return jsonError("กรุณากรอกชื่อ");
+  const { name: rawName, nickname: rawNick, phone: rawPhone, email: rawEmail, password } = await req.json().catch(() => ({}));
+  const name = typeof rawName === "string" ? rawName.trim().slice(0, 100) : "";
+  const nickname = typeof rawNick === "string" ? rawNick.trim().slice(0, 50) : "";
+  const phone = typeof rawPhone === "string" ? rawPhone.trim() : "";
+  if (!name) return jsonError("กรุณากรอกชื่อ–นามสกุล");
+  if (!nickname) return jsonError("กรุณากรอกชื่อเล่น");
+  if (!/^[0-9+\-\s]{9,20}$/.test(phone)) return jsonError("กรุณากรอกเบอร์โทรให้ถูกต้อง");
+  const profile = { name, nickname, phone };
   if (!rawEmail || typeof rawEmail !== "string" || !/^\S+@\S+\.\S+$/.test(rawEmail)) return jsonError("รูปแบบอีเมลไม่ถูกต้อง");
   if (!password || String(password).length < 8) return jsonError("รหัสผ่านอย่างน้อย 8 ตัวอักษร");
   const email = rawEmail.trim().toLowerCase();
   const service = createServiceSupabase();
 
   // อีเมล Admin ต้องให้ Admin ที่มีอยู่ยืนยันเสมอ — กันคนอื่นสมัครด้วยอีเมล Admin แล้วได้สิทธิ์ Admin
-  if (isAdminEmail(email)) return createPendingUser(service, name, email, String(password));
+  if (isAdminEmail(email)) return createPendingUser(service, profile, email, String(password));
 
   const supabase = createServerSupabase();
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: { name },
+      data: profile,
       emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/login`,
     },
   });
   if (error) {
     if (/registered|exists/i.test(error.message)) return jsonError("อีเมลนี้ถูกใช้สมัครแล้ว");
     // ส่งอีเมลยืนยันไม่ได้ → ยังสมัครได้ แต่ต้องรอ Admin ยืนยันบัญชีก่อนเข้าสู่ระบบ
-    if (isEmailDeliveryError(error)) return createPendingUser(service, name, email, String(password));
+    if (isEmailDeliveryError(error)) return createPendingUser(service, profile, email, String(password));
     return jsonError(error.message, 400);
   }
   // Supabase คืน user ที่ไม่มี identities เมื่ออีเมลนี้มีอยู่แล้ว (กรณีเปิดยืนยันอีเมล)
@@ -38,7 +44,7 @@ export async function POST(req: Request) {
   if (data.user) {
     await service
       .from("users")
-      .upsert({ id: data.user.id, email, name }, { onConflict: "id", ignoreDuplicates: true });
+      .upsert({ id: data.user.id, email, ...profile }, { onConflict: "id", ignoreDuplicates: true });
     if (data.session) {
       await service.from("users").update({ last_login_at: new Date().toISOString() }).eq("id", data.user.id);
     }
@@ -48,12 +54,13 @@ export async function POST(req: Request) {
 }
 
 // สร้างบัญชีแบบยังไม่ยืนยันอีเมล โดยไม่ส่งอีเมล — Admin กดยืนยันให้ที่หน้าสมาชิก
-async function createPendingUser(service: SupabaseClient, name: string, email: string, password: string) {
+type Profile = { name: string; nickname: string; phone: string };
+async function createPendingUser(service: SupabaseClient, profile: Profile, email: string, password: string) {
   const { data, error } = await service.auth.admin.createUser({
     email,
     password,
     email_confirm: false,
-    user_metadata: { name },
+    user_metadata: profile,
   });
   if (error) {
     if (/registered|exists/i.test(error.message)) {
@@ -68,6 +75,6 @@ async function createPendingUser(service: SupabaseClient, name: string, email: s
   }
   await service
     .from("users")
-    .upsert({ id: data.user.id, email, name }, { onConflict: "id", ignoreDuplicates: true });
+    .upsert({ id: data.user.id, email, ...profile }, { onConflict: "id", ignoreDuplicates: true });
   return NextResponse.json({ needsConfirmation: true, pendingAdmin: true });
 }
