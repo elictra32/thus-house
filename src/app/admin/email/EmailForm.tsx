@@ -1,15 +1,38 @@
 "use client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Button from "@/components/Button";
 import Input, { Select, Textarea } from "@/components/Input";
 import { ErrorBox } from "@/components/admin/PageHeader";
 import { api } from "@/lib/api-client";
 
-export default function EmailForm({ classes, brevoReady }: { classes: { id: string; name: string }[]; brevoReady: boolean }) {
+type Member = { id: string; name: string | null; email: string };
+
+export default function EmailForm({
+  classes,
+  roles,
+  members,
+  brevoReady,
+}: {
+  classes: { id: string; name: string }[];
+  roles: { id: string; name: string }[];
+  members: Member[];
+  brevoReady: boolean;
+}) {
   const router = useRouter();
-  const [target, setTarget] = useState("all");
+  const [target, setTarget] = useState("self");
   const [classId, setClassId] = useState(classes[0]?.id ?? "");
+  const [roleId, setRoleId] = useState(roles.find((r) => r.id === "member")?.id ?? roles[0]?.id ?? "");
+  const [picked, setPicked] = useState<string[]>([]);
+  const [search, setSearch] = useState("");
+  const found = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return [];
+    return members
+      .filter((m) => !picked.includes(m.id) && (m.email.toLowerCase().includes(q) || (m.name ?? "").toLowerCase().includes(q)))
+      .slice(0, 8);
+  }, [search, members, picked]);
+  const byId = useMemo(() => new Map(members.map((m) => [m.id, m])), [members]);
   const [status, setStatus] = useState("active");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
@@ -23,11 +46,12 @@ export default function EmailForm({ classes, brevoReady }: { classes: { id: stri
     setError("");
     setResult("");
     if (!subject.trim() || !message.trim()) return setError("กรุณากรอกหัวข้อและข้อความ");
+    if (target === "users" && !picked.length) return setError("กรุณาเลือกสมาชิกอย่างน้อย 1 คน");
     if (!confirm("ยืนยันการส่ง?")) return;
     setLoading(true);
     try {
       const r = await api.post<{ recipients: number; emailed: number }>("/api/admin/email/send-bulk", {
-        target, classId, status, subject, message, notify,
+        target, classId, roleId, status, userIds: picked, subject, message, notify,
       });
       setResult(`ส่งถึง ${r.recipients} คนแล้ว${r.emailed ? ` (อีเมล ${r.emailed})` : ""}`);
       setSubject("");
@@ -48,10 +72,65 @@ export default function EmailForm({ classes, brevoReady }: { classes: { id: stri
         </p>
       )}
       <Select label="ผู้รับ" name="target" value={target} onChange={(e) => setTarget(e.target.value)}>
-        <option value="all">สมาชิกทุกคน</option>
+        <option value="self">ส่งทดสอบหาตัวเอง</option>
+        <option value="users">เลือกสมาชิกเอง...</option>
         <option value="class">ผู้เรียนของคอร์ส...</option>
+        <option value="role">ตาม Role...</option>
         <option value="status">สมาชิกตามสถานะ...</option>
+        <option value="all">สมาชิกทุกคน</option>
       </Select>
+      {target === "role" && (
+        <Select label="Role" name="roleId" value={roleId} onChange={(e) => setRoleId(e.target.value)}>
+          {roles.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+        </Select>
+      )}
+      {target === "users" && (
+        <div>
+          <Input
+            label={`เลือกสมาชิก (${picked.length} คน)`}
+            name="search"
+            placeholder="พิมพ์ชื่อหรืออีเมลเพื่อค้นหา"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          {found.length > 0 && (
+            <ul className="mt-1 overflow-hidden rounded-xl border border-edge bg-raised">
+              {found.map((m) => (
+                <li key={m.id}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPicked([...picked, m.id]);
+                      setSearch("");
+                    }}
+                    className="block w-full px-3 py-2 text-left text-sm hover:bg-white/5"
+                  >
+                    {m.name || "-"} <span className="text-muted">· {m.email}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          {search.trim() && !found.length && <p className="mt-1 text-xs text-muted">ไม่พบสมาชิก</p>}
+          {picked.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {picked.map((id) => (
+                <span key={id} className="flex items-center gap-1.5 rounded-full bg-brand/15 py-1 pl-3 pr-1.5 text-xs">
+                  {byId.get(id)?.name || byId.get(id)?.email}
+                  <button
+                    type="button"
+                    aria-label="เอาออก"
+                    onClick={() => setPicked(picked.filter((p) => p !== id))}
+                    className="flex h-5 w-5 items-center justify-center rounded-full hover:bg-white/10"
+                  >
+                    ✕
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
       {target === "class" && (
         <Select label="คอร์ส" name="classId" value={classId} onChange={(e) => setClassId(e.target.value)}>
           {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
