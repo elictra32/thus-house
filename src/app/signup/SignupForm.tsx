@@ -1,0 +1,82 @@
+"use client";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Input from "@/components/Input";
+import Button from "@/components/Button";
+import { api } from "@/lib/api-client";
+
+type Fields = { name: string; email: string; password: string; confirm: string };
+
+function validate(f: Fields) {
+  const e: Partial<Fields> = {};
+  if (!f.name.trim()) e.name = "กรุณากรอกชื่อ";
+  if (!/^\S+@\S+\.\S+$/.test(f.email)) e.email = "รูปแบบอีเมลไม่ถูกต้อง";
+  if (f.password.length < 8) e.password = "รหัสผ่านอย่างน้อย 8 ตัวอักษร";
+  if (f.confirm !== f.password) e.confirm = "รหัสผ่านไม่ตรงกัน";
+  return e;
+}
+
+export default function SignupForm() {
+  const router = useRouter();
+  const [f, setF] = useState<Fields>({ name: "", email: "", password: "", confirm: "" });
+  const [errors, setErrors] = useState<Partial<Fields>>({});
+  const [error, setError] = useState("");
+  const [done, setDone] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  const set = (k: keyof Fields) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
+
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    const v = validate(f);
+    setErrors(v);
+    if (Object.keys(v).length) return;
+    setLoading(true);
+    try {
+      const res = await api.post<{ needsConfirmation: boolean }>("/api/auth/signup", {
+        name: f.name.trim(),
+        email: f.email.trim(),
+        password: f.password,
+      });
+      if (res.needsConfirmation) {
+        setDone(true);
+      } else {
+        router.push("/dashboard");
+        router.refresh();
+      }
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (done)
+    return (
+      <div className="rounded-lg bg-success/15 p-4 text-sm text-green-300">
+        สมัครสำเร็จ! กรุณายืนยันอีเมลจากลิงก์ที่เราส่งไปที่ <b>{f.email}</b> แล้ว{" "}
+        <Link href="/login" className="underline">เข้าสู่ระบบ</Link>
+      </div>
+    );
+
+  return (
+    <form onSubmit={onSubmit} className="space-y-4" noValidate>
+      <Input label="ชื่อ–นามสกุล" name="name" autoComplete="name" value={f.name} onChange={set("name")} error={errors.name} />
+      <Input label="อีเมล" name="email" type="email" autoComplete="email" value={f.email} onChange={set("email")} error={errors.email} />
+      <Input label="รหัสผ่าน" name="password" type="password" autoComplete="new-password" value={f.password} onChange={set("password")} error={errors.password} />
+      <Input label="ยืนยันรหัสผ่าน" name="confirm" type="password" autoComplete="new-password" value={f.confirm} onChange={set("confirm")} error={errors.confirm} />
+      {error && <p className="rounded-lg bg-danger/15 p-3 text-sm text-red-300">{error}</p>}
+      <Button type="submit" loading={loading} className="w-full">
+        สมัครสมาชิก
+      </Button>
+      <p className="text-center text-sm text-muted">
+        มีบัญชีแล้ว?{" "}
+        <Link href="/login" className="font-semibold text-brand-light">
+          เข้าสู่ระบบ
+        </Link>
+      </p>
+    </form>
+  );
+}

@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { @apply bg-bg text-ink antialiased; }
+  body { @apply min-h-screen; }
+  h1, h2, h3 { letter-spacing: -0.02em; }
+}
+
+@layer components {
+  .card { @apply rounded-2xl border border-[#252934] bg-card; }
+  .kicker { @apply text-[13px] font-extrabold uppercase tracking-[2px] text-brand-light; }
+  .label { @apply mb-1.5 block text-sm text-muted; }
+  .th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted; }
+  .td { @apply border-t border-line px-4 py-3 text-sm; }
+}
