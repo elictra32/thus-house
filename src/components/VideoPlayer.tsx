@@ -19,6 +19,9 @@ export default function VideoPlayer({
 }) {
   const [elapsed, setElapsed] = useState(0);
   const [saving, setSaving] = useState(false);
+  // เต็มจอแบบจำลอง (iPhone ไม่รองรับ Fullscreen API กับ iframe) — ขยายกรอบวิดีโอให้ทับทั้งจอ
+  const [pseudoFull, setPseudoFull] = useState(false);
+  const frameRef = useRef<HTMLDivElement>(null);
   const marked = useRef(watched);
   const target = Math.max(1, Math.floor(video.duration_seconds * THRESHOLD));
 
@@ -50,11 +53,47 @@ export default function VideoPlayer({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [elapsed]);
 
+  // เต็มจอ: ใช้ Fullscreen API ถ้าเบราว์เซอร์รองรับ (Android / คอม) และพยายามหมุนเป็นแนวนอน
+  // ไม่รองรับ (iPhone) → ขยายกรอบทับทั้งหน้าจอแทน · ไม่ถอด iframe ออก วิดีโอจึงเล่นต่อไม่เริ่มใหม่
+  async function enterFullscreen() {
+    const el = frameRef.current as (HTMLDivElement & { webkitRequestFullscreen?: () => Promise<void> | void }) | null;
+    if (!el) return;
+    const request = el.requestFullscreen?.bind(el) ?? el.webkitRequestFullscreen?.bind(el);
+    if (request) {
+      try {
+        await request();
+        try {
+          await (screen.orientation as ScreenOrientation & { lock?: (o: string) => Promise<void> }).lock?.("landscape");
+        } catch {}
+        return;
+      } catch {}
+    }
+    setPseudoFull(true);
+  }
+
+  useEffect(() => {
+    if (!pseudoFull) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setPseudoFull(false);
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
+  }, [pseudoFull]);
+
   const pct = watched ? 100 : Math.min(100, Math.round((elapsed / Math.max(1, video.duration_seconds)) * 100));
 
   return (
     <div className="rounded-[20px] border border-edge bg-[#1b1422] p-4 shadow-[0_25px_80px_#0008]">
-      <div className="relative aspect-video overflow-hidden rounded-[14px] bg-gradient-to-br from-[#3a2449] to-[#1d1624]">
+      <div
+        ref={frameRef}
+        className={
+          pseudoFull
+            ? "fixed inset-0 z-[100] bg-black"
+            : "relative aspect-video overflow-hidden rounded-[14px] bg-gradient-to-br from-[#3a2449] to-[#1d1624] [&:fullscreen]:rounded-none [&:fullscreen]:bg-black"
+        }
+      >
         <iframe
           src={driveEmbedUrl(video.video_url)}
           title={video.title}
@@ -64,22 +103,42 @@ export default function VideoPlayer({
         />
         {/* บังปุ่ม "เปิดในหน้าต่างใหม่" มุมขวาบนของ Drive ไม่ให้กดออกไปที่ลิงก์ Drive ตรงๆ */}
         <div className="absolute right-0 top-0 z-10 h-16 w-16" onContextMenu={(e) => e.preventDefault()} aria-hidden />
+        {pseudoFull && (
+          <button
+            onClick={() => setPseudoFull(false)}
+            aria-label="ออกจากโหมดเต็มจอ"
+            className="absolute left-3 top-3 z-20 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-lg text-white backdrop-blur"
+          >
+            ✕
+          </button>
+        )}
       </div>
       <div className="mt-4">
         <div className="h-[7px] overflow-hidden rounded-full bg-edge">
           <i className="block h-full bg-brand transition-all" style={{ width: `${pct}%` }} />
         </div>
-        <div className="mt-2 flex items-center justify-between text-xs text-[#aaa0b3]">
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-2 text-xs text-[#aaa0b3]">
           <span>
             {watched
               ? "✓ ดูบทนี้แล้ว"
               : `เวลาที่เปิดบทเรียน ${formatDuration(Math.min(elapsed, video.duration_seconds))} / ${formatDuration(video.duration_seconds)}`}
           </span>
-          {!watched && (
-            <button onClick={markWatched} disabled={saving} className="font-semibold text-brand-light hover:underline disabled:opacity-50">
-              {saving ? "กำลังบันทึก..." : "ทำเครื่องหมายว่าดูแล้ว ✓"}
+          <div className="flex items-center gap-4">
+            {!watched && (
+              <button onClick={markWatched} disabled={saving} className="font-semibold text-brand-light hover:underline disabled:opacity-50">
+                {saving ? "กำลังบันทึก..." : "ทำเครื่องหมายว่าดูแล้ว ✓"}
+              </button>
+            )}
+            <button
+              onClick={enterFullscreen}
+              className="flex items-center gap-1.5 rounded-lg border border-edge bg-raised px-3 py-1.5 font-semibold text-ink hover:border-muted/60"
+            >
+              <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden>
+                <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
+              </svg>
+              เต็มจอ
             </button>
-          )}
+          </div>
         </div>
       </div>
     </div>

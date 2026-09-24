@@ -5,6 +5,8 @@ import type { Config } from "tailwindcss";
 // - หน้า Landing: พื้นกระดาษสีอ่อน + ตัวอักษรหนาสีเข้ม (ฟอนต์ Inter + IBM Plex Sans Thai ทั้งเว็บ) + gradient ม่วง/ฟ้า/ส้ม แบบสไลด์ THUS MEMBER BENEFITS
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
+  // หน้าเว็บสาธารณะมีโหมดมืด (สลับด้วยปุ่มบน Navbar → class "dark" บน <html>)
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
@@ -19,8 +21,14 @@ const config: Config = {
         subtle: "#82788b",
         brand: { DEFAULT: "#7a5f96", light: "#c9b8dd", dark: "#473654" },
         plum: { 900: "#2d183c", 800: "#3a2449", 700: "#473654", 500: "#6a5c73", 300: "#a597ad" },
-        paper: { DEFAULT: "#e3e2dd", light: "#efeee9" },
-        charcoal: "#1f1f1f",
+        // สีของหน้าเว็บสาธารณะ — ค่าจริงอยู่ใน globals.css (:root = โหมดสว่าง, .dark = โหมดมืด)
+        paper: { DEFAULT: "rgb(var(--paper) / <alpha-value>)", light: "rgb(var(--paper-light) / <alpha-value>)" },
+        charcoal: "rgb(var(--charcoal) / <alpha-value>)",
+        accent: {
+          DEFAULT: "rgb(var(--accent) / <alpha-value>)",
+          muted: "rgb(var(--accent-muted) / <alpha-value>)",
+          soft: "rgb(var(--accent-soft) / <alpha-value>)",
+        },
         glow: { lilac: "#ba94c7", blue: "#9195dc", orange: "#ec9e56", pink: "#e3a3a8" },
         danger: "#dc2626",
         success: "#22c55e",

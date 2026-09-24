@@ -3,6 +3,24 @@
 @tailwind utilities;
 
 @layer base {
+  /* สีหน้าเว็บสาธารณะ (RGB) — โหมดสว่างตามสไลด์ THUS MEMBER BENEFITS, โหมดมืดตามแบนเนอร์โลโก้ */
+  :root {
+    --paper: 227 226 221;
+    --paper-light: 239 238 233;
+    --charcoal: 31 31 31;
+    --accent: 45 24 60;
+    --accent-muted: 71 54 84;
+    --accent-soft: 106 92 115;
+  }
+  .dark {
+    --paper: 21 15 27;
+    --paper-light: 31 23 39;
+    --charcoal: 241 237 245;
+    --accent: 221 205 240;
+    --accent-muted: 196 176 219;
+    --accent-soft: 176 150 205;
+    color-scheme: dark;
+  }
   html { @apply bg-bg text-ink antialiased; }
   body { @apply min-h-screen; }
   h1, h2, h3 { letter-spacing: -0.02em; }
@@ -15,3 +33,6 @@
   .th { @apply px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-muted; }
   .td { @apply border-t border-line px-4 py-3 text-sm; }
 }
+
+/* แสงฟุ้งพื้นหลังในโหมดมืด ลดความเข้มลงให้ไม่แสบตา */
+.dark .glow { opacity: 0.55; }

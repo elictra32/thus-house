@@ -100,7 +100,7 @@ function Lines({ children }: { children: React.ReactNode[] }) {
 
 // แสง gradient เบลอแบบสไลด์ THUS MEMBER BENEFITS
 function Glow({ className }: { className: string }) {
-  return <div aria-hidden className={`pointer-events-none absolute rounded-full blur-[90px] ${className}`} />;
+  return <div aria-hidden className={`glow pointer-events-none absolute rounded-full blur-[90px] ${className}`} />;
 }
 
 export default async function Landing() {
@@ -113,14 +113,17 @@ export default async function Landing() {
       {/* ---------- Hero ---------- */}
       <header className="relative overflow-hidden px-5 pb-16 pt-10 sm:px-[6vw] md:pb-20 md:pt-16 lg:pt-20">
         <Glow className="-left-32 top-10 h-[420px] w-[300px] rotate-12 bg-glow-lilac/60" />
-        <Glow className="right-[-120px] top-[-60px] h-[460px] w-[420px] bg-glow-orange/45" />
-        <Glow className="bottom-[-160px] left-1/3 h-[380px] w-[520px] bg-glow-pink/40" />
+        <Glow className="right-[-120px] top-[-60px] h-[460px] w-[420px] bg-glow-orange/45 dark:bg-[#6b3fa0]/60" />
+        <Glow className="bottom-[-160px] left-1/3 h-[380px] w-[520px] bg-glow-pink/40 dark:bg-glow-blue/30" />
 
         <div className="relative grid items-center gap-10 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,1fr)] lg:gap-14">
           <div>
-            <p className="flex items-center gap-3 text-[11px] font-bold tracking-[0.32em] text-plum-700 sm:text-xs">
-              <span aria-hidden className="h-px w-8 bg-plum-700/40" />
+            {/* ข้อความส่วนหัวจัดกึ่งกลางในคอลัมน์ */}
+            <div className="text-center">
+            <p className="flex items-center justify-center gap-3 text-[11px] font-bold tracking-[0.32em] text-accent-muted sm:text-xs">
+              <span aria-hidden className="h-px w-8 bg-accent-muted/40" />
               THUS HOUSE OF TRADERS
+              <span aria-hidden className="h-px w-8 bg-accent-muted/40" />
             </p>
 
             <h1 className="mt-5 text-[clamp(3.6rem,12vw,6rem)] font-extrabold uppercase leading-[0.86] xl:text-[7rem] tracking-[-0.04em] text-charcoal">
@@ -129,7 +132,7 @@ export default async function Landing() {
               Member
             </h1>
 
-            <p className="mt-5 w-fit bg-gradient-to-r from-plum-700 via-[#a45c95] to-glow-orange bg-clip-text pb-1 text-[clamp(1.4rem,3.6vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-transparent">
+            <p className="mx-auto mt-5 w-fit bg-gradient-to-r from-plum-700 via-[#a45c95] to-glow-orange dark:from-[#cdb6ea] dark:via-[#e59ac0] dark:to-glow-orange bg-clip-text pb-1 text-[clamp(1.4rem,3.6vw,2rem)] font-bold leading-tight tracking-[-0.02em] text-transparent">
               Winners Average Winners
             </p>
 
@@ -142,18 +145,19 @@ export default async function Landing() {
                   <>
                     ไปจนถึง<span className="whitespace-nowrap">การต่อยอดสู่การเป็นมืออาชีพ</span>{" "}
                     <span className="whitespace-nowrap">
-                      ภายในระยะเวลา <b className="font-bold text-plum-900">1 ปีเต็ม</b>
+                      ภายในระยะเวลา <b className="font-bold text-accent">1 ปีเต็ม</b>
                     </span>
                   </>,
                   <>
-                    เน้นทั้ง <b className="whitespace-nowrap font-bold text-plum-900">“ทักษะการเทรดจริง”</b> และ{" "}
-                    <b className="whitespace-nowrap font-bold text-plum-900">“กระบวนการคิดแบบมืออาชีพ”</b>
+                    เน้นทั้ง <b className="whitespace-nowrap font-bold text-accent">“ทักษะการเทรดจริง”</b> และ{" "}
+                    <b className="whitespace-nowrap font-bold text-accent">“กระบวนการคิดแบบมืออาชีพ”</b>
                   </>,
                 ]}
               </Lines>
             </p>
+            </div>
 
-            <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap">
+            <div className="mt-8 grid gap-3 sm:flex sm:flex-wrap sm:justify-center">
               <ButtonLink href="/signup" variant="plum" className="h-12 px-6 text-base">
                 สมัคร THUS Member →
               </ButtonLink>
@@ -163,7 +167,7 @@ export default async function Landing() {
             </div>
           </div>
 
-          <div className="overflow-hidden rounded-[20px] border border-white/70 bg-white/40 p-1.5 shadow-[0_30px_80px_-20px_#2d183c55] backdrop-blur sm:rounded-[24px] sm:p-2">
+          <div className="overflow-hidden rounded-[20px] border border-white/70 bg-white/40 p-1.5 dark:border-white/10 dark:bg-white/5 shadow-[0_30px_80px_-20px_#2d183c55] backdrop-blur sm:rounded-[24px] sm:p-2">
             <div className="relative aspect-video overflow-hidden rounded-[15px] bg-plum-900 sm:rounded-[18px]">
               <YouTubeLite id={INTRO_VIDEO_ID} title="THUS House of Traders" />
             </div>
@@ -174,7 +178,7 @@ export default async function Landing() {
         <div className="relative mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-charcoal/10 bg-charcoal/10 md:mt-16 lg:grid-cols-4">
           {stats.map((s) => (
             <div key={s.value} className="bg-paper-light/90 px-5 py-5 sm:px-6 sm:py-6">
-              <div className="text-[26px] font-extrabold leading-none tracking-[-0.03em] text-plum-900 sm:text-3xl lg:text-4xl">{s.value}</div>
+              <div className="text-[26px] font-extrabold leading-none tracking-[-0.03em] text-accent sm:text-3xl lg:text-4xl">{s.value}</div>
               <div className="mt-2.5 text-[13px] leading-snug text-charcoal/65 sm:text-sm">
                 {s.label.map((part, i) => (
                   <Fragment key={part}>
@@ -190,18 +194,18 @@ export default async function Landing() {
 
       {/* ---------- Highlights ---------- */}
       <section id="highlights" className="scroll-mt-20 px-[6vw] py-20">
-        <p className="text-xs font-bold tracking-[3px] text-plum-700">HIGHLIGHTS</p>
+        <p className="text-xs font-bold tracking-[3px] text-accent-muted">HIGHLIGHTS</p>
         <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-6xl">
           Learn smarter.
           <br />
-          <span className="text-plum-500">Build better.</span>
+          <span className="text-accent-soft">Build better.</span>
         </h2>
         <p className="mt-4 text-lg text-charcoal/70">เรียนจากตลาดจริง ไปพร้อมกัน 1 ปีเต็ม</p>
         <div className="mt-10 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {highlights.map((h, i) => (
             <div key={h.title} className="rounded-2xl border border-charcoal/10 bg-paper-light p-6 transition hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-25px_#2d183c66]">
-              <div className="text-sm font-extrabold text-plum-500">{String(i + 1).padStart(2, "0")}</div>
-              <h3 className="mt-3 text-xl font-bold text-plum-900">{h.title}</h3>
+              <div className="text-sm font-extrabold text-accent-soft">{String(i + 1).padStart(2, "0")}</div>
+              <h3 className="mt-3 text-xl font-bold text-accent">{h.title}</h3>
               <p className="mt-2 leading-relaxed text-charcoal/75">{h.body}</p>
             </div>
           ))}
@@ -262,7 +266,7 @@ export default async function Landing() {
           <div className="relative">
             <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-bold tracking-[3px] text-plum-700">FEEDBACK LOVER</p>
+                <p className="text-xs font-bold tracking-[3px] text-accent-muted">FEEDBACK LOVER</p>
                 <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">เสียงจากสมาชิก</h2>
               </div>
               <ButtonLink href="/feedback" variant="paper">ดู Feedback ทั้งหมด ({feedback.length}) →</ButtonLink>
@@ -289,7 +293,7 @@ export default async function Landing() {
         <div className="relative">
           <div className="flex items-end justify-between gap-8">
             <div>
-              <p className="text-xs font-bold tracking-[3px] text-plum-700">CURRICULUM</p>
+              <p className="text-xs font-bold tracking-[3px] text-accent-muted">CURRICULUM</p>
               <h2 className="mt-3 text-4xl font-extrabold tracking-[-1.5px] md:text-5xl">
                 หัวข้อ <span className="whitespace-nowrap">Class ปรับพื้นฐาน</span>
               </h2>
@@ -297,7 +301,7 @@ export default async function Landing() {
                 <Lines>
                   {[
                     <>
-                      <b className="font-bold text-plum-900">20 บทเรียน</b>ปูพื้นให้พร้อมก่อนเรียนสด{" "}
+                      <b className="font-bold text-accent">20 บทเรียน</b>ปูพื้นให้พร้อมก่อนเรียนสด{" "}
                       <span className="whitespace-nowrap">ตั้งแต่พื้นฐาน Futures</span>
                     </>,
                     <>
@@ -308,12 +312,12 @@ export default async function Landing() {
                 </Lines>
               </p>
             </div>
-            <Image src="/brand/mark.png" alt="" width={96} height={96} className="hidden shrink-0 opacity-90 lg:block" />
+            <Image src="/brand/mark.png" alt="" width={96} height={96} className="hidden shrink-0 opacity-90 dark:opacity-100 dark:[filter:brightness(2.2)] lg:block" />
           </div>
           <ol className="mt-10 grid gap-x-10 sm:grid-cols-2">
             {curriculum.map((c, i) => (
               <li key={c} className="flex items-baseline gap-4 border-b border-charcoal/10 py-3.5">
-                <span className="w-7 shrink-0 text-sm font-extrabold text-plum-500">{String(i + 1).padStart(2, "0")}</span>
+                <span className="w-7 shrink-0 text-sm font-extrabold text-accent-soft">{String(i + 1).padStart(2, "0")}</span>
                 <span className="font-medium">{c}</span>
               </li>
             ))}
