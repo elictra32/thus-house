@@ -59,7 +59,7 @@ export default async function ClassPage({ params, searchParams }: { params: { id
           ) : (
             <>
               <h2 className="mt-4 text-xl font-bold">ซื้อคอร์สเพื่อเริ่มเรียน</h2>
-              <p className="mt-2 text-sm text-muted">ชำระครั้งเดียว เรียนได้ตลอดชีพ</p>
+              <p className="mt-2 text-sm text-muted">ชำระครั้งเดียว เรียนได้ตลอดอายุสมาชิก</p>
               <ButtonLink href={`/payment?class=${cls.id}`} className="mt-6">Buy Class · {baht(cls.price)}</ButtonLink>
             </>
           )}
