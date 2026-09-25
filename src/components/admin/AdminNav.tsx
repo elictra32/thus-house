@@ -17,7 +17,8 @@ const items: { href: string; label: string; icon: string; perm?: Permission }[] 
   { href: "/admin/gallery", label: "รูปหน้าเว็บ", icon: "▣", perm: "content" },
   { href: "/admin/analytics", label: "Analytics", icon: "↗", perm: "dashboard" },
   { href: "/admin/usage", label: "Usage & ค่าใช้จ่าย", icon: "◔", perm: "dashboard" },
-  { href: "/admin/logs", label: "Audit Log", icon: "≡", perm: "logs" },
+  { href: "/admin/logs", label: "Log สมาชิก / Admin", icon: "≡", perm: "logs" },
+  { href: "/admin/mentor", label: "สมาชิกที่ฉันดูแล", icon: "🧭", perm: "mentor" },
   { href: "/admin/roles", label: "Role & สิทธิ์", icon: "🔑", perm: "roles" },
   { href: "/dashboard", label: "กลับหน้าเว็บ", icon: "←" },
 ];

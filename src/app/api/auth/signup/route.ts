@@ -6,16 +6,20 @@ import { isAdminEmail } from "@/lib/admin";
 import { isEmailDeliveryError, unconfirmedUserIds } from "@/lib/email-confirm";
 import { notifyDiscord } from "@/lib/discord";
 import { botEnabled, postSignupReview } from "@/lib/discord-bot";
+import { formatBirthDate, isBirthDate } from "@/lib/member-profile";
+import { logMember } from "@/lib/member-log";
 
 export async function POST(req: Request) {
-  const { name: rawName, nickname: rawNick, phone: rawPhone, email: rawEmail, password } = await req.json().catch(() => ({}));
+  const { name: rawName, nickname: rawNick, phone: rawPhone, birthDate: rawBirth, email: rawEmail, password } = await req.json().catch(() => ({}));
   const name = typeof rawName === "string" ? rawName.trim().slice(0, 100) : "";
   const nickname = typeof rawNick === "string" ? rawNick.trim().slice(0, 50) : "";
   const phone = typeof rawPhone === "string" ? rawPhone.trim() : "";
   if (!name) return jsonError("กรุณากรอกชื่อ–นามสกุล");
   if (!nickname) return jsonError("กรุณากรอกชื่อเล่น");
   if (!/^[0-9+\-\s]{9,20}$/.test(phone)) return jsonError("กรุณากรอกเบอร์โทรให้ถูกต้อง");
-  const profile = { name, nickname, phone };
+  const birth_date = typeof rawBirth === "string" ? rawBirth : "";
+  if (!isBirthDate(birth_date)) return jsonError("กรุณาเลือกวัน เดือน ปีเกิดให้ครบ");
+  const profile = { name, nickname, phone, birth_date };
   if (!rawEmail || typeof rawEmail !== "string" || !/^\S+@\S+\.\S+$/.test(rawEmail)) return jsonError("รูปแบบอีเมลไม่ถูกต้อง");
   if (!password || String(password).length < 8) return jsonError("รหัสผ่านอย่างน้อย 8 ตัวอักษร");
   const email = rawEmail.trim().toLowerCase();
@@ -52,12 +56,13 @@ export async function POST(req: Request) {
     }
   }
 
-  await notifyDiscord("signup", "สมาชิกสมัครใหม่", { ชื่อ: name, ชื่อเล่น: nickname, เบอร์: phone, อีเมล: email }, "/admin/members");
+  if (data.user) await logMember(service, data.user.id, "signup");
+  await notifyDiscord("signup", "สมาชิกสมัครใหม่", { ชื่อ: name, ชื่อเล่น: nickname, เบอร์: phone, วันเกิด: formatBirthDate(birth_date), อีเมล: email }, "/admin/members");
   return NextResponse.json({ needsConfirmation: !data.session, pendingAdmin: false });
 }
 
 // สร้างบัญชีแบบยังไม่ยืนยันอีเมล โดยไม่ส่งอีเมล — Admin กดยืนยันให้ที่หน้าสมาชิก
-type Profile = { name: string; nickname: string; phone: string };
+type Profile = { name: string; nickname: string; phone: string; birth_date: string };
 async function createPendingUser(service: SupabaseClient, profile: Profile, email: string, password: string) {
   const { data, error } = await service.auth.admin.createUser({
     email,
@@ -79,7 +84,8 @@ async function createPendingUser(service: SupabaseClient, profile: Profile, emai
   await service
     .from("users")
     .upsert({ id: data.user.id, email, ...profile }, { onConflict: "id", ignoreDuplicates: true });
-  const info = { ชื่อ: profile.name, ชื่อเล่น: profile.nickname, เบอร์: profile.phone, อีเมล: email };
+  await logMember(service, data.user.id, "signup");
+  const info = { ชื่อ: profile.name, ชื่อเล่น: profile.nickname, เบอร์: profile.phone, วันเกิด: formatBirthDate(profile.birth_date), อีเมล: email };
   // มี Discord Bot → มีปุ่ม "ยืนยันอีเมลแทน" · ไม่มี → แจ้งเตือนแบบเดิม
   const posted = await postSignupReview(data.user.id, info);
   if ("error" in posted) {

@@ -11,6 +11,7 @@ export const PERMISSIONS = [
   { key: "community", label: "ตอบ/ลบคอมเมนต์ใต้คลิป และตอบข้อความถึงผู้สอน" },
   { key: "logs", label: "ดู Audit Log" },
   { key: "roles", label: "จัดการ Role และเปลี่ยน Role ของผู้อื่น" },
+  { key: "mentor", label: "Mentor: เพิ่มสมาชิกที่ดูแล และจดโน้ตประวัติสมาชิกของตัวเอง" },
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number]["key"];

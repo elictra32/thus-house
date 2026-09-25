@@ -1,13 +1,15 @@
 import { adminRoute, check, ok } from "@/lib/admin-route";
 import { unconfirmedUserIds } from "@/lib/email-confirm";
 
-const PAGE_SIZE = 20;
+const DEFAULT_SIZE = 20;
 
 export const GET = adminRoute("members", async (req, { service }) => {
   const sp = new URL(req.url).searchParams;
   const page = Math.max(1, Number(sp.get("page")) || 1);
   const q = sp.get("q")?.trim();
   const status = sp.get("status");
+  // โหมดแก้หลายคน ขอทีละ 200 คนได้
+  const PAGE_SIZE = [20, 100, 200].includes(Number(sp.get("size"))) ? Number(sp.get("size")) : DEFAULT_SIZE;
 
   const unconfirmed = await unconfirmedUserIds(service);
   let query = service.from("users").select("*, roles(name)", { count: "exact" }).order("created_at", { ascending: false });
