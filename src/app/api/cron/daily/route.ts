@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { notifyDiscord } from "@/lib/discord";
-import { supabasePlan } from "@/lib/usage-plans";
+import { VERCEL_PLANS, nextRenewal, renewsTomorrow, supabasePlan, vercelPlan } from "@/lib/usage-plans";
+
+const VERCEL_PLANS_PRO = VERCEL_PLANS.pro;
 import { formatDate } from "@/lib/utils";
 import { runBackup } from "@/lib/backup";
 
@@ -56,6 +58,16 @@ export async function GET(req: Request) {
       );
     }
     report.usageAlerts = items.length;
+  }
+
+  // ---------- 1.5) Vercel Pro จะต่ออายุพรุ่งนี้ → เตือนก่อน 1 วัน ----------
+  if (vercelPlan() === VERCEL_PLANS_PRO && renewsTomorrow()) {
+    await notifyDiscord("expiring", "Vercel Pro จะต่ออายุพรุ่งนี้", {
+      วันที่ต่ออายุ: nextRenewal(new Date(Date.now() + 86400_000)).toLocaleDateString("th-TH", { dateStyle: "long", timeZone: "UTC" }),
+      ค่าบริการ: vercelPlan().price,
+      หมายเหตุ: "ตัดบัตรอัตโนมัติ — ถ้าจะยกเลิก/เปลี่ยนบัตร ทำที่ vercel.com → Settings → Billing ภายในวันนี้",
+    }, "/admin/usage");
+    report.vercelRenewal = true;
   }
 
   // ---------- 2) สิทธิ์ใกล้หมดอายุ ----------
