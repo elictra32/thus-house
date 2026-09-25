@@ -129,7 +129,7 @@ Class ปรับพื้นฐาน 20 บท: พื้นฐาน Futures
 | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` (`no-reply@thushouse.com`) | Admin ส่งอีเมล · หน้า Usage อ่านเครดิต | **Shared** (ผูก thus-house แล้ว) |
 | `DISCORD_WEBHOOK_URL` | แจ้งเตือนเข้า Discord | ตั้งโดยเจ้าของ |
 | `DISCORD_BACKUP_WEBHOOK_URL` | ไฟล์สำรองข้อมูลทุกวัน (ห้องส่วนตัว) | ตั้งโดยเจ้าของ · ทดสอบส่งได้แล้ว ✓ |
-| `DISCORD_BOT_TOKEN` (Sensitive), `DISCORD_PUBLIC_KEY`, `DISCORD_APPROVAL_CHANNEL_ID` | ปุ่มอนุมัติใน Discord · Interactions Endpoint URL = `https://www.thushouse.com/api/discord/interactions` | ตั้งโดยเจ้าของ |
+| `DISCORD_BOT_TOKEN` (Sensitive), `DISCORD_PUBLIC_KEY`, `DISCORD_APPROVAL_CHANNEL_ID` | ปุ่มอนุมัติใน Discord · Interactions Endpoint URL = `https://www.thushouse.com/api/discord/interactions` · ทดสอบได้ที่ Admin → Usage → "ทดสอบปุ่มอนุมัติใน Discord" (บอกเหตุผลถ้าส่งไม่ได้) · 25 ก.ย. บอทส่งเข้าห้องไม่สำเร็จ (สลิปไม่มี discord_message_id) → ตรวจสิทธิ์บอท/Channel ID | ตั้งโดยเจ้าของ |
 | `CRON_SECRET` | ป้องกัน `/api/cron/daily` | Claude ตั้งให้ (Sensitive) |
 | `SUPABASE_PLAN`, `VERCEL_PLAN` | ตั้ง `pro` เมื่ออัปเกรด → หน้า Usage เทียบลิมิตใหม่ | ยังไม่ตั้ง (= free/hobby) |
 
