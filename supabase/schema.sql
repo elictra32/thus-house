@@ -551,3 +551,11 @@ create index if not exists member_logs_user on public.member_logs (user_id, crea
 create index if not exists member_logs_time on public.member_logs (created_at desc);
 -- ตารางด้านบนไม่มี policy = เข้าถึงได้เฉพาะ API ฝั่ง server (service role)
 revoke all on public.user_roles, public.mentor_members, public.member_notes, public.member_logs from anon, authenticated;
+
+-- ---------- ลำดับชั้น Role: Head Admin > Admin > Mentor > Member (บังคับใน src/lib/role-rank.ts) ----------
+update public.roles set permissions = '{dashboard,payments,members,classes,live,email,content,community,logs,roles,mentor}',
+  description = 'ระดับสูงสุด ทำได้ทุกอย่าง รวมถึงแก้นิยาม Role' where id = 'head_admin';
+update public.roles set permissions = '{dashboard,payments,members,classes,live,email,content,community,logs,roles,mentor}',
+  description = 'ทำได้ทุกอย่าง ยกเว้นเปลี่ยน Role ตัวเอง / แตะ Head Admin / แก้นิยาม Role' where id = 'admin';
+update public.roles set description = 'สูงกว่า Member: เลือกสมาชิกมาดูแล + จดโน้ตประวัติ' where id = 'mentor';
+update public.roles set description = 'ระดับต่ำสุด เรียนคอร์สที่ซื้อได้' where id = 'member';

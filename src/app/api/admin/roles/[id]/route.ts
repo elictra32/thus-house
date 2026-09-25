@@ -2,11 +2,13 @@ import { adminRoute, check, ok, readJson, must } from "@/lib/admin-route";
 import { jsonError, logAdmin } from "@/lib/auth";
 import { LOCKED_ROLES } from "@/lib/permissions";
 import { roleFields } from "@/lib/role-fields";
+import { HEAD, userRank } from "@/lib/role-rank";
 
 type P = { id: string };
 
 // แก้ชื่อ/คำอธิบาย/สิทธิ์ของ Role · member และ head_admin แก้สิทธิ์ไม่ได้ (กันล็อกตัวเองออก)
-export const PUT = adminRoute<P>("roles", async (req, { service, email }, { id }) => {
+export const PUT = adminRoute<P>("roles", async (req, { service, email, user }, { id }) => {
+  if ((await userRank(service, user.id, user.email)) < HEAD) return jsonError("สร้าง/แก้ Role ได้เฉพาะ Head Admin", 403);
   const { data: current } = await service.from("roles").select("*").eq("id", id).maybeSingle();
   if (!current) return jsonError("ไม่พบ Role", 404);
   const fields = roleFields(await readJson(req), false);
@@ -17,7 +19,8 @@ export const PUT = adminRoute<P>("roles", async (req, { service, email }, { id }
 });
 
 // ลบ Role ที่สร้างเอง — สมาชิกใน Role นั้นกลับเป็น Member
-export const DELETE = adminRoute<P>("roles", async (_req, { service, email }, { id }) => {
+export const DELETE = adminRoute<P>("roles", async (_req, { service, email, user }, { id }) => {
+  if ((await userRank(service, user.id, user.email)) < HEAD) return jsonError("ลบ Role ได้เฉพาะ Head Admin", 403);
   const { data: current } = await service.from("roles").select("name, is_system").eq("id", id).maybeSingle();
   if (!current) return jsonError("ไม่พบ Role", 404);
   if (current.is_system) return jsonError("Role ของระบบลบไม่ได้");

@@ -42,6 +42,9 @@ export async function POST(req: Request) {
   const service = createServiceSupabase();
   const { data: exists } = await service.from("users").select("id").eq("id", memberId).maybeSingle();
   if (!exists) return jsonError("ไม่พบสมาชิก", 404);
+  // สมาชิก 1 คนมี Mentor ได้คนเดียว
+  const { data: other } = await service.from("mentor_members").select("mentor_id").eq("member_id", memberId).neq("mentor_id", auth.user.id).maybeSingle();
+  if (other) return jsonError("สมาชิกคนนี้มี Mentor คนอื่นดูแลอยู่แล้ว", 409);
   await service.from("mentor_members").upsert({ mentor_id: auth.user.id, member_id: memberId }, { onConflict: "mentor_id,member_id", ignoreDuplicates: true });
   return NextResponse.json({ ok: true });
 }

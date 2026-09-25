@@ -2,19 +2,22 @@ import { adminRoute, ok, readJson } from "@/lib/admin-route";
 import { jsonError, logAdmin } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { MEMBER_CODE_RE } from "@/lib/member-profile";
+import { HEAD, userRank } from "@/lib/role-rank";
 
 type Change = { id: string; member_code?: string; nickname?: string; status?: string };
 const STATUSES = ["active", "inactive", "suspended"];
 
 // แก้สมาชิกหลายคนพร้อมกัน (รหัสสมาชิก / ชื่อเล่น / สถานะ) — ตรวจครบทุกแถวก่อน แล้วค่อยบันทึก
-export const PUT = adminRoute("members", async (req, { service, email, perms }) => {
+export const PUT = adminRoute("members", async (req, { service, email, user }) => {
   const body = await readJson(req);
   const rows = (Array.isArray(body.rows) ? body.rows : []) as Change[];
   if (!rows.length) return jsonError("ไม่มีรายการที่แก้");
   if (rows.length > 200) return jsonError("แก้ได้ครั้งละไม่เกิน 200 คน");
 
   const ids = rows.map((r) => r.id);
-  const { data: targets } = await service.from("users").select("id, email, role, member_code, roles!users_role_fkey(permissions)").in("id", ids);
+  const { data: targets } = await service.from("users").select("id, email, role, member_code").in("id", ids);
+  const myRank = await userRank(service, user.id, user.email);
+  const { data: extras } = await service.from("user_roles").select("user_id, role_id").in("user_id", ids.length ? ids : ["-"]).eq("role_id", "head_admin");
   const byId = new Map((targets ?? []).map((t) => [t.id, t]));
   const errors: string[] = [];
   const codes = new Map<string, string>(); // code → id (กันซ้ำกันเองในชุดนี้)
@@ -23,8 +26,8 @@ export const PUT = adminRoute("members", async (req, { service, email, perms }) 
     const t = byId.get(r.id);
     if (!t) { errors.push("ไม่พบสมาชิกบางคน"); continue; }
     if (isAdminEmail(t.email)) { errors.push(`${t.email}: บัญชีเจ้าของระบบแก้จากหน้านี้ไม่ได้`); continue; }
-    const privileged = ((t.roles as unknown as { permissions: string[] } | null)?.permissions ?? []).includes("roles");
-    if (privileged && !perms.has("roles")) { errors.push(`${t.email}: ไม่มีสิทธิ์แก้บัญชี Head Admin`); continue; }
+    const isHead = t.role === "head_admin" || (extras ?? []).some((x) => x.user_id === t.id);
+    if (isHead && myRank < HEAD) { errors.push(`${t.email}: แก้บัญชี Head Admin ได้เฉพาะ Head Admin`); continue; }
     if (r.status !== undefined && !STATUSES.includes(r.status)) errors.push(`${t.email}: สถานะไม่ถูกต้อง`);
     if (r.nickname !== undefined && (!r.nickname.trim() || r.nickname.length > 50)) errors.push(`${t.email}: ชื่อเล่นว่างหรือยาวเกินไป`);
     if (r.member_code !== undefined) {

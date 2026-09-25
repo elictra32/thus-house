@@ -20,6 +20,7 @@ type Detail = {
   watchedByClass: Record<string, number>;
   emailConfirmed: boolean;
   isOwner: boolean;
+  canChangeRole: boolean;
   videoLogs: { id: number; blocked: boolean; ip: string | null; created_at: string; videos: { title: string } | null; classes: { name: string } | null }[];
   extraRoles: string[];
   notes: Note[];
@@ -32,7 +33,7 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
   const { data, error, loading, setData, reload } = useApi<Detail>(`/api/admin/users/${params.id}`);
   const { data: me } = useApi<{ user: User | null; permissions: string[] }>("/api/auth/me");
   const canManageRoles = !!me?.permissions.includes("roles");
-  const { data: roleList } = useApi<{ roles: Role[] }>(canManageRoles ? "/api/admin/roles" : null);
+  const { data: roleList } = useApi<{ roles: (Role & { assignable: boolean })[] }>(canManageRoles ? "/api/admin/roles" : null);
   const [saving, setSaving] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -144,27 +145,27 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
             <p className="mb-2 text-xs text-muted">Role</p>
             {data.isOwner ? (
               <p>Head Admin <span className="text-xs text-subtle">· เจ้าของระบบ เปลี่ยนไม่ได้</span></p>
-            ) : canManageRoles && roleList && me?.user?.id !== user.id ? (
+            ) : data.canChangeRole && roleList ? (
               <Select name="role" value={user.role} disabled={saving} onChange={(e) => update({ role: e.target.value })}>
-                {roleList.roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name}</option>
+                {roleList.roles.filter((r) => r.assignable || r.id === user.role).map((r) => (
+                  <option key={r.id} value={r.id} disabled={!r.assignable}>{r.name}</option>
                 ))}
               </Select>
             ) : (
               <p>{user.roles?.name ?? user.role}</p>
             )}
             {/* 1 คนหลาย Role: Role เพิ่มเติม สิทธิ์รวมกับ Role หลัก */}
-            {!data.isOwner && (canManageRoles || data.extraRoles.length > 0) && (
+            {!data.isOwner && (data.canChangeRole || data.extraRoles.length > 0) && (
               <div className="mt-3">
                 <p className="mb-1.5 text-xs text-muted">Role เพิ่มเติม (สิทธิ์รวมกัน)</p>
-                {canManageRoles && roleList && me?.user?.id !== user.id ? (
+                {data.canChangeRole && roleList ? (
                   <div className="flex flex-wrap gap-2">
-                    {roleList.roles.filter((r) => r.id !== "member" && r.id !== user.role).map((r) => {
+                    {roleList.roles.filter((r) => r.id !== "member" && r.id !== user.role && (r.assignable || data.extraRoles.includes(r.id))).map((r) => {
                       const on = data.extraRoles.includes(r.id);
                       return (
                         <button
                           key={r.id}
-                          disabled={saving}
+                          disabled={saving || !r.assignable}
                           onClick={() => update({ extra_roles: on ? data.extraRoles.filter((x) => x !== r.id) : [...data.extraRoles, r.id] })}
                           className={`rounded-full px-3 py-1.5 text-xs ring-1 ring-inset transition ${on ? "bg-brand/25 font-bold ring-brand" : "text-muted ring-edge hover:text-ink"}`}
                         >

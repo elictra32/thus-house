@@ -3,27 +3,23 @@ import { jsonError, logAdmin } from "@/lib/auth";
 import { oneOf, str } from "@/lib/validate";
 import { unconfirmedUserIds } from "@/lib/email-confirm";
 import { isAdminEmail } from "@/lib/admin";
-import type { Permission } from "@/lib/permissions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { loadMentors, loadNotes } from "@/lib/member-notes";
+import { HEAD, canAssign, canManage, roleRank, userRank } from "@/lib/role-rank";
 
 type P = { id: string };
 
-// บัญชีที่มีสิทธิ์จัดการ Role (Head Admin / เจ้าของระบบ) — คนที่ไม่มีสิทธิ์ roles แก้หรือลบไม่ได้
-async function guardTarget(service: SupabaseClient, id: string, perms: Set<Permission>) {
-  const [{ data: target }, { data: extra }] = await Promise.all([
-    service.from("users").select("email, role, roles!users_role_fkey(permissions)").eq("id", id).maybeSingle(),
-    service.from("user_roles").select("roles(permissions)").eq("user_id", id),
-  ]);
-  if (!target) return { target: null, error: null };
-  if (isAdminEmail(target.email)) return { target, error: jsonError("บัญชีเจ้าของระบบแก้ไขหรือลบจากหน้านี้ไม่ได้", 403) };
-  const privileged = [target, ...(extra ?? [])].some((r) =>
-    ((r.roles as unknown as { permissions: string[] } | null)?.permissions ?? []).includes("roles"));
-  if (privileged && !perms.has("roles")) return { target, error: jsonError("ไม่มีสิทธิ์แก้ไขบัญชี Head Admin", 403) };
-  return { target, error: null };
+// บัญชีเจ้าของระบบแก้จากหน้านี้ไม่ได้ · Head Admin แก้ได้เฉพาะ Head Admin ด้วยกัน
+async function guardTarget(service: SupabaseClient, id: string, myRank: number) {
+  const { data: target } = await service.from("users").select("email").eq("id", id).maybeSingle();
+  if (!target) return { target: null, error: null, rank: 0 };
+  if (isAdminEmail(target.email)) return { target, error: jsonError("บัญชีเจ้าของระบบแก้ไขหรือลบจากหน้านี้ไม่ได้", 403), rank: HEAD };
+  const rank = await userRank(service, id);
+  if (rank >= HEAD && myRank < HEAD) return { target, error: jsonError("แก้ไขบัญชี Head Admin ได้เฉพาะ Head Admin", 403), rank };
+  return { target, error: null, rank };
 }
 
-export const GET = adminRoute<P>("members", async (_req, { service }, { id }) => {
+export const GET = adminRoute<P>("members", async (_req, { service, user: me, perms }, { id }) => {
   const [user, purchases, watched, videoLogs, extraRoles, notes, memberLogs, mentors] = await Promise.all([
     service.from("users").select("*, roles!users_role_fkey(name)").eq("id", id).maybeSingle(),
     service.from("purchases").select("*, classes(id, name, videos_count)").eq("user_id", id).order("created_at", { ascending: false }),
@@ -44,12 +40,16 @@ export const GET = adminRoute<P>("members", async (_req, { service }, { id }) =>
     if (cid) watchedByClass[cid] = (watchedByClass[cid] ?? 0) + 1;
   }
   const emailConfirmed = !(await unconfirmedUserIds(service)).has(id);
+  const [myRank, targetRank] = await Promise.all([userRank(service, me.id, me.email), userRank(service, id)]);
+  const canChangeRole = perms.has("roles") && me.id !== id && !isAdminEmail(user.data.email) && canManage(myRank, targetRank);
   return ok({
     user: user.data,
     purchases: check(purchases),
     watchedByClass,
     emailConfirmed,
     isOwner: isAdminEmail(user.data.email),
+    canChangeRole,
+    myRank,
     videoLogs: videoLogs.data ?? [],
     extraRoles: (extraRoles.data ?? []).map((r) => r.role_id),
     notes,
@@ -60,6 +60,7 @@ export const GET = adminRoute<P>("members", async (_req, { service }, { id }) =>
 
 export const PUT = adminRoute<P>("members", async (req, { service, email, user: me, perms }, { id }) => {
   const body = await readJson(req);
+  const myRank = await userRank(service, me.id, me.email);
   const update: Record<string, unknown> = {};
   const status = oneOf(body, "status", ["active", "inactive", "suspended"] as const);
   if (status) update.status = status;
@@ -97,6 +98,7 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
     const role = str(body, "role", { required: true })!;
     const { data: exists } = await service.from("roles").select("id").eq("id", role).maybeSingle();
     if (!exists) return jsonError("ไม่พบ Role นี้");
+    if (!canAssign(myRank, role)) return jsonError("ให้ Role ที่เท่ากับหรือสูงกว่าตัวเองไม่ได้", 403);
     update.role = role;
   }
   // Role เพิ่มเติม (1 คนหลาย Role)
@@ -107,12 +109,18 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
     const list = Array.isArray(body.extra_roles) ? body.extra_roles.filter((r): r is string => typeof r === "string") : [];
     const { data: valid } = await service.from("roles").select("id").in("id", list.length ? list : ["-"]);
     extraRoles = (valid ?? []).map((r) => r.id).filter((r) => r !== "member");
+    // Role เดิมที่ให้ไม่ได้ (สูงกว่า/เท่าตัวเอง) ห้ามเพิ่มหรือถอด
+    const { data: before } = await service.from("user_roles").select("role_id").eq("user_id", id);
+    const old = (before ?? []).map((r) => r.role_id);
+    const touched = [...extraRoles.filter((r) => !old.includes(r)), ...old.filter((r) => !extraRoles!.includes(r))];
+    if (touched.some((r) => !canAssign(myRank, r))) return jsonError("ให้/ถอด Role ที่เท่ากับหรือสูงกว่าตัวเองไม่ได้", 403);
   }
   if (!Object.keys(update).length && !extraRoles) return jsonError("ไม่มีข้อมูลที่จะแก้ไข");
   // บัญชีเจ้าของระบบแก้จากหน้านี้ไม่ได้ ยกเว้น Discord ID (เจ้าของต้องผูกเพื่อกดอนุมัติใน Discord)
   const onlyDiscord = Object.keys(update).every((k) => k === "discord_id");
-  const guard = await guardTarget(service, id, perms);
+  const guard = await guardTarget(service, id, myRank);
   if (guard.error && !onlyDiscord) return guard.error;
+  if (("role" in update || extraRoles) && !canManage(myRank, guard.rank)) return jsonError("เปลี่ยน Role ของคนที่ระดับเท่ากันหรือสูงกว่าไม่ได้", 403);
 
   if (extraRoles) {
     must(await service.from("user_roles").delete().eq("user_id", id));
@@ -125,9 +133,9 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
   return ok({ user });
 });
 
-export const DELETE = adminRoute<P>("members", async (_req, { service, email, user, perms }, { id }) => {
+export const DELETE = adminRoute<P>("members", async (_req, { service, email, user }, { id }) => {
   if (id === user.id) return jsonError("ลบบัญชีตัวเองไม่ได้");
-  const { target, error: denied } = await guardTarget(service, id, perms);
+  const { target, error: denied } = await guardTarget(service, id, await userRank(service, user.id, user.email));
   if (denied) return denied;
   // ลบจาก auth.users → cascade ลบ users, purchases, watched_videos, notifications
   const { error } = await service.auth.admin.deleteUser(id);
