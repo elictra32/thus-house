@@ -1,6 +1,6 @@
 import PageHeader from "@/components/admin/PageHeader";
 import { requirePageAdmin } from "@/lib/auth";
-import { BREVO_FREE_PER_DAY, supabasePlan, vercelPlan } from "@/lib/usage-plans";
+import { BREVO_FREE_PER_DAY, nextRenewal, supabasePlan, vercelPlan } from "@/lib/usage-plans";
 import BackupButton from "./BackupButton";
 import DiscordTestButton from "./DiscordTestButton";
 
@@ -127,6 +127,13 @@ export default async function UsagePage() {
             <p>
               ลิมิตหลัก: Bandwidth ~{vp.bandwidthGb} GB/เดือน — หน้าเว็บเราเล็ก (วิดีโอเล่นจาก YouTube/Drive) สมาชิกหลักพันคน/เดือนยังไม่ถึง
             </p>
+            {vp.label === "Pro" && (
+              <p>
+                ต่ออายุครั้งถัดไป{" "}
+                <b className="text-ink">{nextRenewal().toLocaleDateString("th-TH", { dateStyle: "long", timeZone: "UTC" })}</b>{" "}
+                — แจ้งเตือนเข้า Discord ก่อน 1 วัน
+              </p>
+            )}
             <p>ตัวเลขจริงดูได้ที่ปุ่ม &quot;เปิดหน้า Usage&quot; (Vercel ไม่ให้ดึงตัวเลขมาแสดงที่นี่โดยไม่ใช้ token พิเศษ)</p>
           </div>
         </Service>
