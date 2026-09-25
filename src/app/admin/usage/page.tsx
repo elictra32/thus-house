@@ -2,6 +2,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import { requirePageAdmin } from "@/lib/auth";
 import { BREVO_FREE_PER_DAY, supabasePlan, vercelPlan } from "@/lib/usage-plans";
 import BackupButton from "./BackupButton";
+import DiscordTestButton from "./DiscordTestButton";
 
 export const metadata = { title: "Usage & ค่าใช้จ่าย" };
 export const dynamic = "force-dynamic";
@@ -166,6 +167,7 @@ export default async function UsagePage() {
           {sp.label === "Free" ? " · Supabase Free ไม่มี backup ในตัว ไฟล์ใน Discord คือสำรองหลัก" : " · Supabase Pro มี backup รายวันในตัวอีกชั้น"}
         </p>
         {perms.has("roles") && process.env.DISCORD_BACKUP_WEBHOOK_URL && <BackupButton />}
+        {perms.has("roles") && process.env.DISCORD_BOT_TOKEN && <div className="mt-3"><DiscordTestButton /></div>}
       </section>
 
       <section className="card mt-6 p-6 text-sm leading-relaxed">

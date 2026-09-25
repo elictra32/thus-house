@@ -42,8 +42,20 @@ const fields = (f: Record<string, string | number | null | undefined>): Field[] 
 const button = (label: string, style: 1 | 2 | 3 | 4, custom_id: string) => ({ type: 2, style, label, custom_id });
 const linkButton = (label: string, path: string) => ({ type: 2, style: 5, label, url: SITE() + path });
 
-// ส่งข้อความ + ไฟล์แนบเข้าห้องอนุมัติ · คืน message id (หรือ null ถ้าส่งไม่สำเร็จ)
-async function postToApprovalChannel(payload: object, file?: { name: string; type: string; bytes: Uint8Array }) {
+// แปลง error จาก Discord เป็นคำอธิบายภาษาไทย + วิธีแก้
+export function explainDiscordError(status: number, body: string): string {
+  let code = 0;
+  try { code = (JSON.parse(body) as { code?: number }).code ?? 0; } catch { /* ไม่ใช่ JSON */ }
+  if (status === 401) return "Bot Token ไม่ถูกต้อง (401) — สร้าง Token ใหม่ใน Discord Developer Portal → Bot → Reset Token แล้วใส่ DISCORD_BOT_TOKEN ใน Vercel ใหม่";
+  if (code === 10003 || status === 404) return "ไม่พบห้องนี้ (Unknown Channel) — DISCORD_APPROVAL_CHANNEL_ID ผิด: คลิกขวาที่ห้อง → Copy Channel ID (ต้องเปิด Developer Mode ก่อน)";
+  if (code === 50001) return "บอทมองไม่เห็นห้องนี้ (Missing Access) — เชิญบอทเข้าเซิร์ฟเวอร์ และถ้าเป็นห้องส่วนตัว ให้เพิ่มบอทในสิทธิ์ของห้อง (View Channel)";
+  if (code === 50013) return "บอทขาดสิทธิ์ในห้องนี้ (Missing Permissions) — ให้สิทธิ์ View Channel, Send Messages, Embed Links, Attach Files";
+  if (status === 429) return "Discord จำกัดความถี่ (429) ลองใหม่อีกครั้ง";
+  return `Discord ตอบ ${status}${code ? ` (code ${code})` : ""}: ${body.slice(0, 200)}`;
+}
+
+// ส่งข้อความ + ไฟล์แนบเข้าห้องอนุมัติ · คืน message id หรือเหตุผลที่ส่งไม่ได้
+export async function postToApprovalChannel(payload: object, file?: { name: string; type: string; bytes: Uint8Array }): Promise<{ id: string } | { error: string }> {
   const channel = process.env.DISCORD_APPROVAL_CHANNEL_ID;
   const body = { allowed_mentions: { parse: [] }, ...payload };
   try {
@@ -59,13 +71,14 @@ async function postToApprovalChannel(payload: object, file?: { name: string; typ
       });
     }
     if (!res.ok) {
-      console.error("discord bot post failed", res.status, await res.text().catch(() => ""));
-      return null;
+      const text = await res.text().catch(() => "");
+      console.error("discord bot post failed", res.status, text);
+      return { error: explainDiscordError(res.status, text) };
     }
-    return ((await res.json()) as { id: string }).id;
+    return { id: ((await res.json()) as { id: string }).id };
   } catch (err) {
     console.error("discord bot post failed", err);
-    return null;
+    return { error: `เชื่อมต่อ Discord ไม่ได้: ${(err as Error).message}` };
   }
 }
 
@@ -78,7 +91,7 @@ export async function postSlipReview(args: {
   amount: string;
   slip: { bytes: Uint8Array; ext: "png" | "jpg" };
 }) {
-  if (!botEnabled()) return null;
+  if (!botEnabled()) return { error: "ยังไม่ได้ตั้งค่า Discord Bot" };
   const { member } = args;
   return postToApprovalChannel(
     {
@@ -112,7 +125,7 @@ export async function postSlipReview(args: {
 
 // สมัครใหม่แต่ส่งอีเมลยืนยันไม่ได้ → ปุ่มยืนยันอีเมลแทน
 export async function postSignupReview(userId: string, info: Record<string, string>) {
-  if (!botEnabled()) return null;
+  if (!botEnabled()) return { error: "ยังไม่ได้ตั้งค่า Discord Bot" };
   return postToApprovalChannel({
     embeds: [{
       title: "🆕 สมาชิกสมัครใหม่ (รอ Admin ยืนยันอีเมล)",

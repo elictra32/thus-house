@@ -4,7 +4,7 @@ import { requireApiUser, jsonError } from "@/lib/auth";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { SLIP_MAX_BYTES, SLIP_TYPES, baht, isActivePurchase } from "@/lib/utils";
 import { notifyDiscord } from "@/lib/discord";
-import { postSlipReview } from "@/lib/discord-bot";
+import { botEnabled, postSlipReview } from "@/lib/discord-bot";
 
 // ตรวจ magic bytes ว่าเป็น PNG/JPEG จริง ไม่ใช่แค่นามสกุล
 function sniffImage(buf: Uint8Array): "png" | "jpg" | null {
@@ -71,7 +71,7 @@ export async function POST(req: Request) {
   waitUntil((async () => {
     const { data: member } = await service.from("users")
       .select("name, nickname, email, phone, member_code").eq("id", user.id).maybeSingle();
-    const messageId = await postSlipReview({
+    const posted = await postSlipReview({
       purchaseId: purchase.id,
       userId: user.id,
       member: member ?? { name: null, nickname: null, email: user.email ?? "-", phone: null, member_code: null },
@@ -79,8 +79,14 @@ export async function POST(req: Request) {
       amount: baht(cls.price),
       slip: { bytes, ext },
     });
-    if (messageId) await service.from("purchases").update({ discord_message_id: messageId }).eq("id", purchase.id);
-    else await notifyDiscord("payment", "มีสลิปโอนเงินรอตรวจสอบ", { คอร์ส: cls.name, ยอด: baht(cls.price), สมาชิก: user.email }, "/admin/payments");
+    if ("id" in posted) await service.from("purchases").update({ discord_message_id: posted.id }).eq("id", purchase.id);
+    else {
+      // บอทส่งไม่ได้ → แจ้งแบบเดิม พร้อมบอกเหตุผลที่ปุ่มอนุมัติไม่ขึ้น (ถ้าตั้งค่าบอทไว้)
+      await notifyDiscord("payment", "มีสลิปโอนเงินรอตรวจสอบ", {
+        คอร์ส: cls.name, ยอด: baht(cls.price), สมาชิก: user.email,
+        "⚠️ ปุ่มอนุมัติใน Discord ไม่ขึ้นเพราะ": botEnabled() ? posted.error : null,
+      }, "/admin/payments");
+    }
   })().catch((err) => console.error(err)));
   return NextResponse.json({ purchase });
 }

@@ -5,7 +5,7 @@ import { jsonError } from "@/lib/auth";
 import { isAdminEmail } from "@/lib/admin";
 import { isEmailDeliveryError, unconfirmedUserIds } from "@/lib/email-confirm";
 import { notifyDiscord } from "@/lib/discord";
-import { postSignupReview } from "@/lib/discord-bot";
+import { botEnabled, postSignupReview } from "@/lib/discord-bot";
 
 export async function POST(req: Request) {
   const { name: rawName, nickname: rawNick, phone: rawPhone, email: rawEmail, password } = await req.json().catch(() => ({}));
@@ -81,8 +81,11 @@ async function createPendingUser(service: SupabaseClient, profile: Profile, emai
     .upsert({ id: data.user.id, email, ...profile }, { onConflict: "id", ignoreDuplicates: true });
   const info = { ชื่อ: profile.name, ชื่อเล่น: profile.nickname, เบอร์: profile.phone, อีเมล: email };
   // มี Discord Bot → มีปุ่ม "ยืนยันอีเมลแทน" · ไม่มี → แจ้งเตือนแบบเดิม
-  if (!(await postSignupReview(data.user.id, info))) {
-    await notifyDiscord("signup", "สมาชิกสมัครใหม่ (รอ Admin ยืนยันอีเมล)", info, "/admin/members?status=unconfirmed");
+  const posted = await postSignupReview(data.user.id, info);
+  if ("error" in posted) {
+    await notifyDiscord("signup", "สมาชิกสมัครใหม่ (รอ Admin ยืนยันอีเมล)", {
+      ...info, "⚠️ ปุ่มยืนยันใน Discord ไม่ขึ้นเพราะ": botEnabled() ? posted.error : null,
+    }, "/admin/members?status=unconfirmed");
   }
   return NextResponse.json({ needsConfirmation: true, pendingAdmin: true });
 }
