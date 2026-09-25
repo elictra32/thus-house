@@ -20,6 +20,9 @@ alter table public.users add column if not exists last_login_at timestamptz;
 alter table public.users add column if not exists nickname text;       -- ชื่อเล่น (บังคับกรอกตอนสมัคร)
 alter table public.users add column if not exists member_code text;    -- รหัสสมาชิก (Admin กำหนด)
 create unique index if not exists users_member_code_key on public.users (lower(member_code)) where member_code is not null;
+-- Discord user ID ของ Admin — ใช้ตรวจสิทธิ์ตอนกดปุ่มอนุมัติใน Discord (Head Admin กำหนด)
+alter table public.users add column if not exists discord_id text;
+create unique index if not exists users_discord_id_key on public.users (discord_id) where discord_id is not null;
 
 create table if not exists public.classes (
   id uuid primary key default gen_random_uuid(),
@@ -50,6 +53,8 @@ create table if not exists public.purchases (
 alter table public.purchases add column if not exists rejection_reason text;
 -- วันหมดสิทธิ์เรียน · null = ไม่หมดอายุ
 alter table public.purchases add column if not exists expires_at timestamptz;
+-- ข้อความสลิปในห้องอนุมัติ Discord (แก้ข้อความ/เอาปุ่มออกเมื่ออนุมัติหรือปฏิเสธแล้ว)
+alter table public.purchases add column if not exists discord_message_id text;
 
 create table if not exists public.videos (
   id uuid primary key default gen_random_uuid(),

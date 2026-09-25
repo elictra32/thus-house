@@ -87,6 +87,7 @@ Class ปรับพื้นฐาน 20 บท: พื้นฐาน Futures
 - ✓ คอมเมนต์ใต้คลิป + ไลก์บทเรียน/คอมเมนต์ · ตอบกลับได้ 1 ชั้น · ทีมงาน (สิทธิ์ community) มีป้าย "ทีมงาน" ตอบ/ลบได้ · สมาชิกลบของตัวเองได้
 - ✓ "ถามผู้สอน" (/messages) → Admin → ข้อความถึงผู้สอน ตอบกลับแล้วสมาชิกได้แจ้งเตือน 🔔
 - ✓ แจ้งเตือน Discord (`DISCORD_WEBHOOK_URL`): สมัครใหม่ · สลิปรอตรวจ · อนุมัติ/ปฏิเสธสลิป (ใครทำ) · คอมเมนต์ · ข้อความถึงผู้สอน · เปิดบทเรียนถี่ผิดปกติ · Usage 80%+ · สิทธิ์เหลือ 30/7/1 วัน
+- ✓ **กดอนุมัติใน Discord** (Discord Bot): สลิปใหม่ → ห้องอนุมัติพร้อมรูปสลิป + ปุ่ม อนุมัติ / ปฏิเสธ (พิมพ์เหตุผล) / เปิดในเว็บ · สมัครใหม่ที่รอยืนยัน → ปุ่ม "ยืนยันอีเมลแทน" · กดได้เฉพาะ Admin ที่ Head Admin ใส่ **Discord ID** ไว้ (Admin → สมาชิก) และมีสิทธิ์ตรงงาน · กดแล้วข้อความเปลี่ยนเป็นผลลัพธ์ ปุ่มหาย · อนุมัติในเว็บ ข้อความใน Discord ก็อัปเดตตาม · ไม่ตั้งค่า Bot = แจ้งเตือนแบบเดิม
 - ✓ สำรองข้อมูลทุกวันเป็นไฟล์ .json.gz เข้าห้อง Discord ส่วนตัว (`DISCORD_BACKUP_WEBHOOK_URL`) + ปุ่ม "สำรองข้อมูลตอนนี้" ที่ Admin → Usage (Head Admin)
 - ✓ Cron ประจำวัน `/api/cron/daily` (vercel.json, 09:00 น., ป้องกันด้วย `CRON_SECRET`) — ทำให้ Supabase Free ไม่หยุดเพราะไม่มีการใช้งานด้วย
 - ✓ Admin → **Usage & ค่าใช้จ่าย**: แถบใช้งาน Supabase (DB/ไฟล์/MAU) + Brevo เครดิตคงเหลือ + ลิงก์ Vercel · ส้ม 60%+ / แดง 85%+ · ตั้ง `SUPABASE_PLAN` / `VERCEL_PLAN` = pro เมื่ออัปเกรด
@@ -128,6 +129,7 @@ Class ปรับพื้นฐาน 20 บท: พื้นฐาน Futures
 | `BREVO_API_KEY`, `BREVO_SENDER_EMAIL` (`no-reply@thushouse.com`) | Admin ส่งอีเมล · หน้า Usage อ่านเครดิต | **Shared** (ผูก thus-house แล้ว) |
 | `DISCORD_WEBHOOK_URL` | แจ้งเตือนเข้า Discord | ตั้งโดยเจ้าของ |
 | `DISCORD_BACKUP_WEBHOOK_URL` | ไฟล์สำรองข้อมูลทุกวัน (ห้องส่วนตัว) | ตั้งโดยเจ้าของ · ทดสอบส่งได้แล้ว ✓ |
+| `DISCORD_BOT_TOKEN` (Sensitive), `DISCORD_PUBLIC_KEY`, `DISCORD_APPROVAL_CHANNEL_ID` | ปุ่มอนุมัติใน Discord · Interactions Endpoint URL = `https://www.thushouse.com/api/discord/interactions` | ตั้งโดยเจ้าของ |
 | `CRON_SECRET` | ป้องกัน `/api/cron/daily` | Claude ตั้งให้ (Sensitive) |
 | `SUPABASE_PLAN`, `VERCEL_PLAN` | ตั้ง `pro` เมื่ออัปเกรด → หน้า Usage เทียบลิมิตใหม่ | ยังไม่ตั้ง (= free/hobby) |
 

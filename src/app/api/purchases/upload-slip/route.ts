@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 import { requireApiUser, jsonError } from "@/lib/auth";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { SLIP_MAX_BYTES, SLIP_TYPES, baht, isActivePurchase } from "@/lib/utils";
 import { notifyDiscord } from "@/lib/discord";
+import { postSlipReview } from "@/lib/discord-bot";
 
 // ตรวจ magic bytes ว่าเป็น PNG/JPEG จริง ไม่ใช่แค่นามสกุล
 function sniffImage(buf: Uint8Array): "png" | "jpg" | null {
@@ -63,6 +65,22 @@ export async function POST(req: Request) {
     message: `สลิปคอร์ส ${cls.name} อยู่ระหว่างรอตรวจสอบ`,
   });
 
-  await notifyDiscord("payment", "มีสลิปโอนเงินรอตรวจสอบ", { คอร์ส: cls.name, ยอด: baht(cls.price), สมาชิก: auth.user.email }, "/admin/payments");
+  // มี Discord Bot → ส่งรูปสลิป + ปุ่มอนุมัติ/ปฏิเสธ · ไม่มี/ส่งไม่ได้ → แจ้งเตือนแบบเดิม
+  // ทำหลังตอบสมาชิกแล้ว — สมาชิกไม่ต้องรอ Discord
+  const user = auth.user;
+  waitUntil((async () => {
+    const { data: member } = await service.from("users")
+      .select("name, nickname, email, phone, member_code").eq("id", user.id).maybeSingle();
+    const messageId = await postSlipReview({
+      purchaseId: purchase.id,
+      userId: user.id,
+      member: member ?? { name: null, nickname: null, email: user.email ?? "-", phone: null, member_code: null },
+      className: cls.name,
+      amount: baht(cls.price),
+      slip: { bytes, ext },
+    });
+    if (messageId) await service.from("purchases").update({ discord_message_id: messageId }).eq("id", purchase.id);
+    else await notifyDiscord("payment", "มีสลิปโอนเงินรอตรวจสอบ", { คอร์ส: cls.name, ยอด: baht(cls.price), สมาชิก: user.email }, "/admin/payments");
+  })().catch((err) => console.error(err)));
   return NextResponse.json({ purchase });
 }
