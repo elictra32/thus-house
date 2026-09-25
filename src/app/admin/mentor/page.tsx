@@ -31,6 +31,10 @@ export default function MentorPage() {
   const { data, error, loading, reload } = useApi<{ members: Member[] }>("/api/mentor");
   const [selected, setSelected] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  // ยังไม่มีใครในความดูแล → เปิดรายชื่อให้เลือกเลย
+  useEffect(() => {
+    if (data && !data.members.length) setAdding(true);
+  }, [data]);
 
   useEffect(() => {
     if (!selected && data?.members.length) setSelected(data.members[0].id);
@@ -42,10 +46,10 @@ export default function MentorPage() {
       <PageHeader
         title="สมาชิกที่ฉันดูแล"
         subtitle={data ? `${data.members.length} คน` : undefined}
-        action={<Button size="sm" onClick={() => setAdding(!adding)}>{adding ? "ปิด" : "+ เพิ่มสมาชิก"}</Button>}
+        action={<Button size="sm" onClick={() => setAdding(!adding)}>{adding ? "ปิดรายชื่อ" : "+ เลือกสมาชิก"}</Button>}
       />
       {error && <ErrorBox message={error} />}
-      {adding && <AddMember existing={data?.members.map((m) => m.id) ?? []} onAdded={(id) => { reload(); setSelected(id); }} />}
+      {adding && <AddMember onAdded={(id) => { reload(); setSelected(id); }} />}
 
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
         <div className="card h-fit divide-y divide-line">
@@ -64,7 +68,7 @@ export default function MentorPage() {
               </div>
             </button>
           ))}
-          {!data?.members.length && <p className="p-5 text-sm text-muted">ยังไม่มีสมาชิกในความดูแล — กด “+ เพิ่มสมาชิก”</p>}
+          {!data?.members.length && <p className="p-5 text-sm text-muted">ยังไม่มีสมาชิกในความดูแล — กด “+ เลือกสมาชิก”</p>}
         </div>
         {selected && <MemberPanel key={selected} id={selected} onRemoved={() => { setSelected(null); reload(); }} onNote={reload} />}
       </div>
@@ -72,43 +76,56 @@ export default function MentorPage() {
   );
 }
 
-function AddMember({ existing, onAdded }: { existing: string[]; onAdded: (id: string) => void }) {
+// รายชื่อสมาชิกที่ยังไม่มี Mentor — กดเลือกได้เลย (พิมพ์เพื่อกรอง)
+function AddMember({ onAdded }: { onAdded: (id: string) => void }) {
+  const { data, error, loading, reload } = useApi<{ members: Found[] }>("/api/mentor/available");
   const [q, setQ] = useState("");
-  const [results, setResults] = useState<Found[]>([]);
   const [busy, setBusy] = useState("");
-  useEffect(() => {
-    if (!q.trim()) return setResults([]);
-    const t = setTimeout(() => {
-      api.get<{ results: Found[] }>(`/api/mentor/search?q=${encodeURIComponent(q.trim())}`).then((r) => setResults(r.results)).catch(() => {});
-    }, 300);
-    return () => clearTimeout(t);
-  }, [q]);
+  const [err, setErr] = useState("");
+  const term = q.trim().toLowerCase();
+  const list = (data?.members ?? []).filter(
+    (m) => !term || [m.member_code, m.nickname, m.name].some((v) => v?.toLowerCase().includes(term)),
+  );
   async function add(id: string) {
     setBusy(id);
+    setErr("");
     try {
       await api.post("/api/mentor", { memberId: id });
+      reload();
       onAdded(id);
+    } catch (e) {
+      setErr((e as Error).message);
+      reload();
     } finally {
       setBusy("");
     }
   }
   return (
     <div className="card mb-6 p-5">
-      <Input name="q" placeholder="พิมพ์รหัสสมาชิก ชื่อ หรือชื่อเล่น" value={q} onChange={(e) => setQ(e.target.value)} autoFocus className="max-w-md" />
-      <ul className="mt-3 space-y-2">
-        {results.map((r) => (
-          <li key={r.id} className="flex items-center gap-3">
-            <Avatar src={r.avatar_url} name={r.nickname || r.name || "?"} size={32} />
-            <span className="flex-1 text-sm">{who(r)} {r.nickname && r.name && <span className="text-muted">· {r.name}</span>}</span>
-            {existing.includes(r.id) ? (
-              <span className="text-xs text-subtle">ดูแลอยู่แล้ว</span>
-            ) : (
-              <Button size="sm" variant="outline" loading={busy === r.id} onClick={() => add(r.id)}>+ เพิ่ม</Button>
-            )}
-          </li>
-        ))}
-        {q.trim() && !results.length && <li className="text-sm text-muted">ไม่พบสมาชิก</li>}
-      </ul>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm">
+          สมาชิกที่ยังไม่มี Mentor <b>{data?.members.length ?? "…"}</b> คน — กด <b>+ ดูแล</b> เพื่อเพิ่ม
+        </p>
+        <Input name="q" placeholder="กรองด้วยรหัส / ชื่อ / ชื่อเล่น" value={q} onChange={(e) => setQ(e.target.value)} className="w-full sm:w-72" />
+      </div>
+      {(error || err) && <p className="mt-3 text-sm text-red-300">{error || err}</p>}
+      {loading && !data ? (
+        <p className="mt-4 text-sm text-muted">กำลังโหลด...</p>
+      ) : (
+        <ul className="mt-4 grid max-h-[420px] gap-2 overflow-y-auto sm:grid-cols-2 xl:grid-cols-3">
+          {list.map((r) => (
+            <li key={r.id} className="flex items-center gap-3 rounded-xl bg-raised/60 px-3 py-2.5">
+              <Avatar src={r.avatar_url} name={r.nickname || r.name || "?"} size={36} />
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold">{who(r)}</p>
+                {r.name && <p className="truncate text-xs text-muted">{r.name}</p>}
+              </div>
+              <Button size="sm" variant="outline" loading={busy === r.id} onClick={() => add(r.id)}>+ ดูแล</Button>
+            </li>
+          ))}
+          {!list.length && <li className="text-sm text-muted">{term ? "ไม่พบสมาชิก" : "สมาชิกทุกคนมี Mentor ดูแลแล้ว"}</li>}
+        </ul>
+      )}
     </div>
   );
 }

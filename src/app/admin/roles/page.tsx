@@ -15,7 +15,8 @@ type Form = { name: string; description: string; permissions: Permission[] };
 const empty: Form = { name: "", description: "", permissions: [] };
 
 export default function RolesPage() {
-  const { data, error, loading, reload } = useApi<{ roles: Row[] }>("/api/admin/roles");
+  const { data, error, loading, reload } = useApi<{ roles: Row[]; canEdit: boolean }>("/api/admin/roles");
+  const canEdit = !!data?.canEdit;
   const [editing, setEditing] = useState<Row | "new" | null>(null);
   const [form, setForm] = useState<Form>(empty);
   const [saving, setSaving] = useState(false);
@@ -72,8 +73,8 @@ export default function RolesPage() {
     <>
       <PageHeader
         title="Role & สิทธิ์"
-        subtitle="กำหนดว่าแต่ละ Role เข้าเมนูไหนได้บ้าง · เปลี่ยน Role ของสมาชิกได้ที่หน้าสมาชิก"
-        action={<Button onClick={() => open("new")}>+ สร้าง Role ใหม่</Button>}
+        subtitle="ลำดับชั้น: Head Admin > Admin > Mentor > Member · ให้ Role ได้เฉพาะที่ต่ำกว่าตัวเอง · แก้นิยาม Role ได้เฉพาะ Head Admin"
+        action={canEdit ? <Button onClick={() => open("new")}>+ สร้าง Role ใหม่</Button> : undefined}
       />
       {error && <ErrorBox message={error} />}
       {loading ? (
@@ -92,8 +93,8 @@ export default function RolesPage() {
                   <p className="mt-1 text-xs text-subtle">{r.members} คน</p>
                 </div>
                 <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="ghost" onClick={() => open(r)}>แก้ไข</Button>
-                  {!r.is_system && <Button size="sm" variant="ghost" onClick={() => setToDelete(r)}>ลบ</Button>}
+                  {canEdit && <Button size="sm" variant="ghost" onClick={() => open(r)}>แก้ไข</Button>}
+                  {canEdit && !r.is_system && <Button size="sm" variant="ghost" onClick={() => setToDelete(r)}>ลบ</Button>}
                 </div>
               </div>
               <ul className="mt-4 space-y-1 text-sm">
