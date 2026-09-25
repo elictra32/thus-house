@@ -2,6 +2,7 @@ import { Fragment } from "react";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { SocialButtons } from "@/components/SocialLinks";
 import ClassCard from "@/components/ClassCard";
 import Link from "next/link";
 import { ButtonLink } from "@/components/Button";
@@ -362,6 +363,11 @@ export default async function Landing() {
           <ButtonLink href="/signup" variant="plum" className="mt-8 px-7 py-4 text-base">
             สมัคร THUS Member →
           </ButtonLink>
+          <p className="mt-14 text-xs font-bold tracking-[3px] text-accent-muted">FOLLOW US</p>
+          <p className="mt-2 text-lg font-bold">ติดตาม THUS House</p>
+          <div className="mt-5">
+            <SocialButtons />
+          </div>
         </div>
       </section>
 
