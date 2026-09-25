@@ -145,7 +145,7 @@ export default async function Landing() {
                   <>
                     ไปจนถึง<span className="whitespace-nowrap">การต่อยอดสู่การเป็นมืออาชีพ</span>{" "}
                     <span className="whitespace-nowrap">
-                      ภายในระยะเวลา <b className="font-bold text-accent">1 ปีเต็ม</b>
+                      ตลอดระยะเวลา <b className="font-bold text-accent">1 ปีเต็ม</b>
                     </span>
                   </>,
                   <>
