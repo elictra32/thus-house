@@ -315,7 +315,7 @@ export default async function Landing() {
                 <Lines>
                   {[
                     <>
-                      <b className="font-bold text-accent">20 บทเรียน</b>ปูพื้นให้พร้อมก่อนเรียนสด{" "}
+                      <b className="font-bold text-accent">20 บทเรียน</b>ปูพื้นฐานให้พร้อมก่อนเรียนสด{" "}
                       <span className="whitespace-nowrap">ตั้งแต่พื้นฐาน Futures</span>
                     </>,
                     <>
