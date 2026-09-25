@@ -4,6 +4,8 @@
 1. อ่าน **`docs/OWNER_PREFERENCES.md`** — ข้อมูลธุรกิจ, ดีไซน์ที่เจ้าของชอบ/ไม่ชอบ, วิธีสื่อสาร (ภาษาไทย), สิ่งที่ถูกแก้แล้ว
 2. ใช้ skill **`membership-site-builder`** (`.claude/skills/membership-site-builder/`) — ขั้นตอน Supabase / Vercel / โดเมน / อีเมล, แผนที่โค้ด, workflow ภาพตัวอย่างก่อน deploy, ข้อผิดพลาดที่เคยเจอ
 
+กติกา/ความต้องการที่เจ้าของตกลงแล้ว + ความปลอดภัย: skill **`thus-house-requirements`** (`.claude/skills/thus-house-requirements/`) — อ่านก่อนเปลี่ยนพฤติกรรมระบบ
+
 คู่มือฟังก์ชันทั้งหมด (สำหรับเจ้าของ/ทีมงาน): **`docs/USER_GUIDE.md`** — เพิ่ม/เปลี่ยนฟีเจอร์ ต้องอัปเดตไฟล์นี้ด้วย
 
 สรุปสั้น:
