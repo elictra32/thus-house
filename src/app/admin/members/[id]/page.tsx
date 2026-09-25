@@ -26,6 +26,7 @@ type Detail = {
   notes: Note[];
   memberLogs: MemberLog[];
   mentors: { id: string; name: string | null; nickname: string | null; member_code: string | null }[];
+  presence: { visits: number; seconds: number; lastSeen: string | null };
 };
 
 export default function MemberDetail({ params }: { params: { id: string } }) {
@@ -118,6 +119,12 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
           <Row label="สมัครเมื่อ" value={formatDate(user.created_at)} />
           <Row label="เริ่มเป็นสมาชิก" value={formatDate(user.membership_start)} />
           <Row label="เข้าสู่ระบบล่าสุด" value={formatDate(user.last_login_at, true)} />
+          <Row
+            label="ใช้งานเว็บ 30 วัน"
+            value={data.presence.visits
+              ? `${data.presence.visits} ครั้ง · ${Math.floor(data.presence.seconds / 3600)} ชม. ${Math.round((data.presence.seconds % 3600) / 60)} นาที · ล่าสุด ${formatDate(data.presence.lastSeen, true)}`
+              : "-"}
+          />
           <div>
             <p className="text-xs text-muted">อุปกรณ์ที่ล็อกอิน (ใช้ได้ทีละ 1 เครื่อง)</p>
             {user.active_session ? (

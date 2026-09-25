@@ -1,5 +1,7 @@
 import "server-only";
 import { cache } from "react";
+import { cookies } from "next/headers";
+import { VIEW_AS_COOKIE, isViewAs, type ViewAs } from "./view-as";
 import { NextResponse } from "next/server";
 import { redirect } from "next/navigation";
 import type { User as AuthUser, SupabaseClient } from "@supabase/supabase-js";
@@ -24,19 +26,36 @@ export async function requirePageUser() {
 
 // สิทธิ์ Admin ของผู้ใช้ตาม Role (cache ต่อ request)
 // เจ้าของระบบใน NEXT_PUBLIC_ADMIN_EMAILS ได้ทุกสิทธิ์เสมอ — กันล็อกตัวเองออกจากระบบ Role
-export const getPermissions = cache(async (userId: string | undefined, email: string | null | undefined) => {
-  if (!userId) return new Set<Permission>();
-  if (isAdminEmail(email)) return new Set<Permission>(ALL_PERMISSIONS);
+export const getRealPermissions = cache(async (userId: string | undefined, email: string | null | undefined) => {
+  if (!userId) return { perms: new Set<Permission>(), head: false };
+  if (isAdminEmail(email)) return { perms: new Set<Permission>(ALL_PERMISSIONS), head: true };
   const service = createServiceSupabase();
   const [{ data }, { data: extra }] = await Promise.all([
-    service.from("users").select("status, roles!users_role_fkey(permissions)").eq("id", userId).maybeSingle(),
+    service.from("users").select("status, role, roles!users_role_fkey(permissions)").eq("id", userId).maybeSingle(),
     // 1 คนหลาย Role: สิทธิ์ = Role หลัก + Role เพิ่มเติม (user_roles) รวมกัน
-    service.from("user_roles").select("roles(permissions)").eq("user_id", userId),
+    service.from("user_roles").select("role_id, roles(permissions)").eq("user_id", userId),
   ]);
   // บัญชีที่ไม่ได้ active (inactive / suspended) ไม่มีสิทธิ์ Admin
-  if (!data || data.status !== "active") return new Set<Permission>();
+  if (!data || data.status !== "active") return { perms: new Set<Permission>(), head: false };
   const lists = [data, ...(extra ?? [])].map((r) => (r.roles as unknown as { permissions: string[] } | null)?.permissions ?? []);
-  return new Set<Permission>(lists.flat().filter(isPermission));
+  const head = data.role === "head_admin" || !!extra?.some((r) => r.role_id === "head_admin");
+  return { perms: new Set<Permission>(lists.flat().filter(isPermission)), head };
+});
+
+// มุมมองจำลองของ Head Admin (null = ปกติ)
+export async function getViewAs(userId: string | undefined, email: string | null | undefined): Promise<ViewAs | null> {
+  const v = cookies().get(VIEW_AS_COOKIE)?.value;
+  if (!isViewAs(v)) return null;
+  return (await getRealPermissions(userId, email)).head ? v : null;
+}
+
+// สิทธิ์ที่ใช้งานจริงในหน้าเว็บ — Head Admin ที่เลือกมุมมอง Mentor / Member จะเห็นเท่าสิทธิ์ของ Role นั้น
+export const getPermissions = cache(async (userId: string | undefined, email: string | null | undefined) => {
+  const real = await getRealPermissions(userId, email);
+  const view = real.head ? await getViewAs(userId, email) : null;
+  if (view === "member") return new Set<Permission>();
+  if (view === "mentor") return new Set<Permission>(["mentor"]);
+  return real.perms;
 });
 
 // หน้า /admin: ต้องมีสิทธิ์ Admin อย่างน้อย 1 อย่าง (และสิทธิ์ perm ถ้าระบุ)

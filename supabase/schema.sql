@@ -608,3 +608,40 @@ with ids as (
   ) yt from public.videos where thumbnail_url is null)
 update public.videos v set thumbnail_url = 'https://i.ytimg.com/vi/' || ids.yt || '/hqdefault.jpg'
 from ids where ids.id = v.id and ids.yt is not null;
+
+-- ---------- ออนไลน์ & เวลาใช้งาน: หน้าเว็บส่ง ping ทุก 60 วิ ระหว่างเปิดแท็บ → รวมเป็น "ช่วงใช้งาน" (ห่างเกิน 3 นาที = ครั้งใหม่) ----------
+create table if not exists public.presence_sessions (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references public.users(id) on delete cascade,
+  started_at timestamptz not null default now(),
+  last_seen timestamptz not null default now()
+);
+create index if not exists presence_sessions_user on public.presence_sessions (user_id, last_seen desc);
+create index if not exists presence_sessions_seen on public.presence_sessions (last_seen desc);
+alter table public.presence_sessions enable row level security;
+revoke all on public.presence_sessions from anon, authenticated;
+
+create or replace function public.presence_ping(uid uuid) returns void
+language plpgsql security definer set search_path = public as $$
+declare sid bigint;
+begin
+  select id into sid from presence_sessions
+   where user_id = uid and last_seen > now() - interval '3 minutes'
+   order by last_seen desc limit 1;
+  if sid is null then insert into presence_sessions (user_id) values (uid);
+  else update presence_sessions set last_seen = now() where id = sid;
+  end if;
+end $$;
+
+-- สถิติรายคน ตั้งแต่วันที่กำหนด: จำนวนครั้ง, เวลารวม (วินาที, ครั้งละอย่างน้อย 1 นาที), เห็นล่าสุด
+create or replace function public.presence_stats(since timestamptz)
+returns table (user_id uuid, visits bigint, seconds bigint, last_seen timestamptz)
+language sql stable security definer set search_path = public as $$
+  select s.user_id, count(*), sum(greatest(60, extract(epoch from s.last_seen - s.started_at)))::bigint, max(s.last_seen)
+    from presence_sessions s where s.last_seen >= since
+   group by s.user_id;
+$$;
+revoke all on function public.presence_ping(uuid) from public, anon, authenticated;
+revoke all on function public.presence_stats(timestamptz) from public, anon, authenticated;
+grant execute on function public.presence_ping(uuid) to service_role;
+grant execute on function public.presence_stats(timestamptz) to service_role;

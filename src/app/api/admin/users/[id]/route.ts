@@ -32,6 +32,14 @@ export const GET = adminRoute<P>("members", async (_req, { service, user: me, pe
     service.from("member_logs").select("id, action, details, created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(200),
     loadMentors(service, id),
   ]);
+  // เวลาใช้งาน 30 วัน (จาก ping ออนไลน์)
+  const { data: pres } = await service.from("presence_sessions").select("started_at, last_seen")
+    .eq("user_id", id).gte("last_seen", new Date(Date.now() - 30 * 86400_000).toISOString());
+  const presence = {
+    visits: pres?.length ?? 0,
+    seconds: (pres ?? []).reduce((s, p) => s + Math.max(60, (Date.parse(p.last_seen) - Date.parse(p.started_at)) / 1000), 0),
+    lastSeen: (pres ?? []).reduce<string | null>((m, p) => (!m || p.last_seen > m ? p.last_seen : m), null),
+  };
   if (!user.data) return jsonError("ไม่พบสมาชิก", 404);
 
   const watchedByClass: Record<string, number> = {};
@@ -55,6 +63,7 @@ export const GET = adminRoute<P>("members", async (_req, { service, user: me, pe
     notes,
     memberLogs: memberLogs.data ?? [],
     mentors,
+    presence,
   });
 });
 
