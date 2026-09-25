@@ -39,3 +39,5 @@
 - server เก่าที่ยังรันอยู่จะเสิร์ฟ build เก่า (CSS หาย) → ฆ่าก่อน start ใหม่
 - PostgREST embed `from("A").select("..., users(...)")` พังเงียบๆ (PGRST201 ambiguous) เมื่อมีตารางเชื่อม (junction) ที่มี FK ไปทั้ง A และ users เช่น `lesson_comment_likes` → data = null ทั้งก้อน · ดึงผู้ใช้แยกด้วย `.in("id", ids)` และเช็ก `error` ทุกครั้ง
 - React: element พี่น้องที่ `key` ซ้ำกัน (เช่น `<VideoPlayer key={id}/>` + `<Comments key={id}/>`) → ตัวเก่าไม่ถูกถอด วิดีโอซ้อน/สถานะค้าง — ใช้ prefix ต่างกัน
+
+- **เพิ่มตารางที่มี FK ไปหาตารางเดิม 2 ตัว (เช่น `user_roles` → users + roles) ทำให้ embed เดิม `users.select("roles(...)")` พังทั้งเว็บ** ("more than one relationship was found") — หลังสร้างตารางเชื่อม ให้ `grep "roles("` แล้วเปลี่ยนเป็น `roles!users_role_fkey(...)` ทันที และทดสอบหน้าที่ใช้ embed นั้นก่อน merge (mock ไม่จับ error นี้)

@@ -3,17 +3,22 @@ import StatusBadge from "@/components/StatusBadge";
 import LogoutButton from "@/components/LogoutButton";
 import { baht, formatDate } from "@/lib/utils";
 import ProfileFields from "./ProfileFields";
+import Link from "next/link";
+import { missingProfile } from "@/lib/member-profile";
 import type { Purchase } from "@/types/database";
 
 export const metadata = { title: "โปรไฟล์" };
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ searchParams }: { searchParams: { complete?: string; next?: string } }) {
   const { supabase, user, profile } = await requirePageUser();
   const { data } = await supabase
     .from("purchases")
     .select("*, classes(name)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+  const missing = missingProfile(profile);
+  // กันพาไปเว็บอื่น: รับเฉพาะ path ภายใน
+  const nextUrl = searchParams.next?.startsWith("/") && !searchParams.next.startsWith("//") ? searchParams.next : "/payment";
   const purchases = (data ?? []) as (Purchase & { classes: { name: string } | null })[];
 
   return (
@@ -26,7 +31,23 @@ export default async function ProfilePage() {
         <LogoutButton />
       </div>
 
+      {/* มาจากหน้าชำระเงิน: บอกว่าเหลืออะไร / ครบแล้วพากลับไปจ่ายต่อ */}
+      {searchParams.complete === "1" && (
+        missing.length ? (
+          <div className="rounded-2xl border border-amber-400/30 bg-amber-400/10 p-4 text-sm text-amber-100">
+            <b>กรอกข้อมูลให้ครบก่อนสมัครคลาส</b> — เหลือ: {missing.map((f) => f.label).join(" · ")}
+            <p className="mt-1 text-xs text-amber-200/80">ช่องที่ยังขาดมีป้าย “จำเป็น” สีส้ม</p>
+          </div>
+        ) : (
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-green-400/30 bg-green-500/10 p-4">
+            <p className="text-sm text-green-200"><b>✓ ข้อมูลครบแล้ว</b> — สมัครคลาสได้เลย</p>
+            <Link href={nextUrl} className="rounded-[10px] bg-brand px-4 py-2.5 text-sm font-bold text-white hover:bg-brand-dark">ไปชำระเงินต่อ →</Link>
+          </div>
+        )
+      )}
+
       <ProfileFields
+        missing={searchParams.complete === "1" ? missing.map((f) => f.key) : []}
         p={{
           name: profile?.name ?? "",
           nickname: profile?.nickname ?? "",

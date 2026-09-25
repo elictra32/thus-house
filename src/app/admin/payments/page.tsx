@@ -103,7 +103,10 @@ export default function PaymentsPage() {
                   <StatusBadge status={p.status} />
                 </div>
                 <div className="mt-3 flex justify-between text-sm">
-                  <span className="font-bold">{baht(p.amount)}</span>
+                  <span className="font-bold">
+                    {baht(p.amount)}
+                    {p.discount_code && <span className="ml-1.5 rounded bg-brand/25 px-1.5 py-0.5 text-[11px] font-semibold text-brand-light">🏷 {p.discount_code}</span>}
+                  </span>
                   <span className="text-xs text-subtle">{formatDate(p.created_at, true)}</span>
                 </div>
               </div>
@@ -130,6 +133,12 @@ export default function PaymentsPage() {
               <Info label="อีเมล" value={selected.users?.email || "-"} />
               <Info label="คอร์ส" value={selected.classes?.name || "-"} />
               <Info label="ยอดที่ต้องชำระ" value={baht(selected.amount)} />
+              {selected.discount_code && (
+                <Info
+                  label="โค้ดส่วนลด"
+                  value={`${selected.discount_code} · ลด ${baht(selected.discount_amount ?? 0)} จาก ${baht(selected.original_amount ?? 0)} · รหัสยืนยัน ${selected.discount_ref ?? "-"}`}
+                />
+              )}
               <Info label="วันที่อัปโหลด" value={formatDate(selected.created_at, true)} />
               <div><p className="text-xs text-muted">สถานะ</p><StatusBadge status={selected.status} /></div>
               {selected.approved_by && (

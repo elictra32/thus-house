@@ -506,7 +506,7 @@ grant execute on function public.get_id_card(uuid) to service_role;
 
 -- ---------- 1 คนหลาย Role: users.role = Role หลัก, user_roles = Role เพิ่มเติม (สิทธิ์รวมกัน) ----------
 create table if not exists public.user_roles (
-  user_id uuid not null references public.users(id) on delete cascade,
+  user_id uuid not null,  -- ไม่ใส่ FK ไป users: ถ้ามี PostgREST จะเห็น users↔roles 2 ทาง แล้ว embed roles(...) พัง (ลบตามด้วย trigger ด้านล่าง)
   role_id text not null references public.roles(id) on update cascade on delete cascade,
   created_at timestamptz not null default now(),
   primary key (user_id, role_id)
@@ -559,3 +559,42 @@ update public.roles set permissions = '{dashboard,payments,members,classes,live,
   description = 'ทำได้ทุกอย่าง ยกเว้นเปลี่ยน Role ตัวเอง / แตะ Head Admin / แก้นิยาม Role' where id = 'admin';
 update public.roles set description = 'สูงกว่า Member: เลือกสมาชิกมาดูแล + จดโน้ตประวัติ' where id = 'mentor';
 update public.roles set description = 'ระดับต่ำสุด เรียนคอร์สที่ซื้อได้' where id = 'member';
+
+-- user_roles ไม่มี FK ไป users (ดูเหตุผลด้านบน) → ลบแถวตามเมื่อลบผู้ใช้
+alter table public.user_roles drop constraint if exists user_roles_user_id_fkey;
+create or replace function public.cleanup_user_roles() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from user_roles where user_id = old.id;
+  delete from mentor_members where mentor_id = old.id or member_id = old.id;
+  return old;
+end $$;
+revoke execute on function public.cleanup_user_roles() from public, anon, authenticated;
+drop trigger if exists cleanup_user_roles on public.users;
+create trigger cleanup_user_roles after delete on public.users for each row execute function public.cleanup_user_roles();
+
+-- ---------- โค้ดส่วนลด (Admin สร้างที่ Admin → โค้ดส่วนลด · ตรวจ/คำนวณใน src/lib/discount.ts) ----------
+create table if not exists public.discount_codes (
+  code text primary key check (code ~ '^[A-Z0-9_-]{3,30}$'),
+  description text,
+  kind text not null default 'percent' check (kind in ('percent', 'amount')),  -- ลดเป็น % หรือเป็นบาท
+  value numeric not null check (value > 0),
+  class_ids uuid[] not null default '{}',     -- ว่าง = ใช้ได้ทุกคลาส
+  max_uses int check (max_uses is null or max_uses > 0),  -- null = ไม่จำกัด
+  once_per_user boolean not null default true,
+  starts_at timestamptz,
+  expires_at timestamptz,
+  active boolean not null default true,
+  created_by text,
+  created_at timestamptz not null default now(),
+  constraint discount_percent_max check (kind <> 'percent' or value <= 100)
+);
+alter table public.discount_codes enable row level security;
+revoke all on public.discount_codes from anon, authenticated;
+
+-- การซื้อเก็บราคาเต็ม / โค้ด / ส่วนลด / รหัสยืนยันโค้ด (amount = ยอดที่ต้องโอนหลังหักส่วนลด)
+alter table public.purchases add column if not exists original_amount numeric;
+alter table public.purchases add column if not exists discount_code text references public.discount_codes(code) on update cascade on delete set null;
+alter table public.purchases add column if not exists discount_amount numeric;
+alter table public.purchases add column if not exists discount_ref text;
+create index if not exists purchases_discount_code on public.purchases (discount_code) where discount_code is not null;

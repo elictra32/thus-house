@@ -89,7 +89,8 @@ export async function postSlipReview(args: {
   member: { name: string | null; nickname: string | null; email: string; phone: string | null; member_code: string | null };
   className: string;
   amount: string;
-  slip: { bytes: Uint8Array; ext: "png" | "jpg" };
+  discount?: string | null; // เช่น "SAVE10 (ลด 10%) · รหัสยืนยัน D-7K3Q9A · ราคาเต็ม ฿54,900"
+  slip: { bytes: Uint8Array; ext: "png" | "jpg" } | null; // null = ยอด 0 บาท (ใช้โค้ดลดเต็มจำนวน)
 }) {
   if (!botEnabled()) return { error: "ยังไม่ได้ตั้งค่า Discord Bot" };
   const { member } = args;
@@ -106,6 +107,7 @@ export async function postSlipReview(args: {
           รหัสสมาชิก: member.member_code,
           คอร์ส: args.className,
           ยอด: args.amount,
+          โค้ดส่วนลด: args.discount,
         }),
         footer: { text: "ตรวจยอด/ชื่อบัญชีในสลิปก่อนกดอนุมัติ" },
         timestamp: new Date().toISOString(),
@@ -119,7 +121,7 @@ export async function postSlipReview(args: {
         ],
       }],
     },
-    { name: `slip.${args.slip.ext}`, type: args.slip.ext === "png" ? "image/png" : "image/jpeg", bytes: args.slip.bytes },
+    args.slip ? { name: `slip.${args.slip.ext}`, type: args.slip.ext === "png" ? "image/png" : "image/jpeg", bytes: args.slip.bytes } : undefined,
   );
 }
 

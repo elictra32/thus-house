@@ -67,10 +67,12 @@ function AvatarRow({ avatar, name }: { avatar: string; name: string }) {
 
 type Kind = "text" | "textarea" | "date" | "code";
 
+const Required = () => <span className="ml-1.5 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-300">จำเป็น</span>;
+
 // แถวข้อมูล: กด "แก้ไข" → กรอก → บันทึก
 function EditableRow({
-  label, field, value, kind = "text", display, hint,
-}: { label: string; field: string; value: string; kind?: Kind; display?: string; hint?: string }) {
+  label, field, value, kind = "text", display, hint, missing,
+}: { label: string; field: string; value: string; kind?: Kind; display?: string; hint?: string; missing?: boolean }) {
   const router = useRouter();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(value);
@@ -93,9 +95,9 @@ function EditableRow({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+    <div className={`flex flex-wrap items-center justify-between gap-3 px-5 py-4 ${missing ? "bg-amber-400/[0.07] shadow-[inset_3px_0_0_#fbbf24]" : ""}`}>
       <div className="min-w-0 flex-1">
-        <p className="text-xs text-muted">{label}</p>
+        <p className="text-xs text-muted">{label}{missing && <Required />}</p>
         {editing ? (
           <div className="mt-1 max-w-md">
             {kind === "textarea" ? (
@@ -127,7 +129,7 @@ function EditableRow({
 }
 
 // เลขบัตรประชาชน: เก็บแบบเข้ารหัส · แสดงแบบซ่อน กด "แสดง" ถึงเห็น (เฉพาะเจ้าของบัญชีและ Admin)
-function IdCardRow({ last4 }: { last4: string }) {
+function IdCardRow({ last4, missing }: { last4: string; missing?: boolean }) {
   const router = useRouter();
   const [shown, setShown] = useState("");
   const [editing, setEditing] = useState(false);
@@ -164,11 +166,12 @@ function IdCardRow({ last4 }: { last4: string }) {
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
+    <div className={`flex flex-wrap items-center justify-between gap-3 px-5 py-4 ${missing ? "bg-amber-400/[0.07] shadow-[inset_3px_0_0_#fbbf24]" : ""}`}>
       <div className="min-w-0 flex-1">
         <p className="flex items-center gap-1.5 text-xs text-muted">
           เลขบัตรประชาชน
           <span className="rounded-full bg-white/5 px-2 py-0.5 text-[10px] text-subtle">🔒 เข้ารหัส</span>
+          {missing && <Required />}
         </p>
         {editing ? (
           <div className="mt-1 max-w-md">
@@ -198,7 +201,7 @@ function IdCardRow({ last4 }: { last4: string }) {
 }
 
 // ประสบการณ์เทรด + เป้าหมาย (บันทึกทีเดียว)
-function TradingSection({ markets, years, goal }: { markets: string[]; years: string; goal: string }) {
+function TradingSection({ markets, years, goal, missing = [] }: { markets: string[]; years: string; goal: string; missing?: string[] }) {
   const router = useRouter();
   const [m, setM] = useState(markets);
   const [y, setY] = useState(years);
@@ -224,10 +227,10 @@ function TradingSection({ markets, years, goal }: { markets: string[]; years: st
     `rounded-full px-3.5 py-2 text-sm ring-1 ring-inset transition ${on ? "bg-brand/25 font-semibold text-ink ring-brand" : "text-muted ring-edge hover:text-ink"}`;
 
   return (
-    <section className="card space-y-5 p-5">
+    <section className={`card space-y-5 p-5 ${missing.length ? "ring-1 ring-amber-400/40" : ""}`}>
       <h2 className="text-lg font-bold">ประสบการณ์ & เป้าหมาย</h2>
       <div>
-        <p className="label">เคยเทรดอะไรมาบ้าง (เลือกได้หลายอย่าง)</p>
+        <p className="label">เคยเทรดอะไรมาบ้าง (เลือกได้หลายอย่าง){missing.includes("trading_markets") && <Required />}</p>
         <div className="flex flex-wrap gap-2">
           {TRADING_MARKETS.map((k) => (
             <button key={k} type="button" className={chip(m.includes(k))} onClick={() => setM(m.includes(k) ? m.filter((x) => x !== k) : [...m, k])}>
@@ -237,14 +240,15 @@ function TradingSection({ markets, years, goal }: { markets: string[]; years: st
         </div>
       </div>
       <div>
-        <p className="label">ประสบการณ์เทรด</p>
+        <p className="label">ประสบการณ์เทรด{missing.includes("trading_years") && <Required />}</p>
         <div className="flex flex-wrap gap-2">
           {TRADING_YEARS.map((k) => (
             <button key={k} type="button" className={chip(y === k)} onClick={() => setY(y === k ? "" : k)}>{k}</button>
           ))}
         </div>
       </div>
-      <Textarea label="เป้าหมายในการเรียน" name="learning_goal" rows={3} maxLength={1000} placeholder="เช่น อยากมีระบบเทรดของตัวเอง คุมความเสี่ยงได้ ..." value={g} onChange={(e) => setG(e.target.value)} />
+      <label htmlFor="learning_goal" className="label -mb-3 block">เป้าหมายในการเรียน{missing.includes("learning_goal") && <Required />}</label>
+      <Textarea name="learning_goal" rows={3} maxLength={1000} placeholder="เช่น อยากมีระบบเทรดของตัวเอง คุมความเสี่ยงได้ ..." value={g} onChange={(e) => setG(e.target.value)} />
       <div className="flex items-center justify-end gap-3">
         {msg && <span className={`text-sm ${msg === "บันทึกแล้ว" ? "text-green-300" : "text-red-300"}`}>{msg}</span>}
         <Button size="sm" loading={loading} disabled={!dirty} onClick={save}>บันทึก</Button>
@@ -258,24 +262,25 @@ export type ProfileData = {
   birthDate: string; address: string; idCardLast4: string; markets: string[]; years: string; goal: string;
 };
 
-export default function ProfileFields({ p }: { p: ProfileData }) {
+export default function ProfileFields({ p, missing = [] }: { p: ProfileData; missing?: string[] }) {
+  const m = (k: string) => missing.includes(k);
   return (
     <>
-      <section className="card divide-y divide-line">
+      <section className="card divide-y divide-line overflow-hidden">
         <AvatarRow avatar={p.avatar} name={p.nickname || p.name} />
         <EditableRow label="รหัสสมาชิก" field="member_code" kind="code" value={p.memberCode} hint="ใช้ได้ A–Z, 0–9, - และ _ · ห้ามซ้ำกับคนอื่น" />
-        <EditableRow label="ชื่อ–นามสกุล" field="name" value={p.name} />
-        <EditableRow label="ชื่อเล่น" field="nickname" value={p.nickname} />
+        <EditableRow label="ชื่อ–นามสกุล" field="name" value={p.name} missing={m("name")} />
+        <EditableRow label="ชื่อเล่น" field="nickname" value={p.nickname} missing={m("nickname")} />
         <div className="px-5 py-4">
           <p className="text-xs text-muted">อีเมล</p>
           <p className="mt-0.5">{p.email}</p>
         </div>
-        <EditableRow label="เบอร์โทร" field="phone" value={p.phone} />
-        <EditableRow label="วันเดือนปีเกิด" field="birth_date" kind="date" value={p.birthDate} display={formatBirthDate(p.birthDate)} />
-        <IdCardRow last4={p.idCardLast4} />
-        <EditableRow label="ที่อยู่ (สำหรับออกใบกำกับภาษี)" field="address" kind="textarea" value={p.address} />
+        <EditableRow label="เบอร์โทร" field="phone" value={p.phone} missing={m("phone")} />
+        <EditableRow label="วันเดือนปีเกิด" field="birth_date" kind="date" value={p.birthDate} display={formatBirthDate(p.birthDate)} missing={m("birth_date")} />
+        <IdCardRow last4={p.idCardLast4} missing={m("id_card")} />
+        <EditableRow label="ที่อยู่ (สำหรับออกใบกำกับภาษี)" field="address" kind="textarea" value={p.address} missing={m("address")} />
       </section>
-      <TradingSection markets={p.markets} years={p.years} goal={p.goal} />
+      <TradingSection markets={p.markets} years={p.years} goal={p.goal} missing={missing} />
     </>
   );
 }

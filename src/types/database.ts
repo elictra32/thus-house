@@ -62,6 +62,25 @@ export interface Purchase {
   approved_at: string | null;
   expires_at: string | null; // วันหมดสิทธิ์เรียน · null = ไม่หมดอายุ
   discord_message_id: string | null; // ข้อความรอตรวจในห้องอนุมัติ Discord
+  original_amount: number | null; // ราคาเต็มก่อนหักส่วนลด
+  discount_code: string | null;
+  discount_amount: number | null;
+  discount_ref: string | null; // รหัสยืนยันโค้ด (สมาชิกเห็นตอนกรอกโค้ด)
+  created_at: string;
+}
+
+export interface DiscountCode {
+  code: string;
+  description: string | null;
+  kind: "percent" | "amount";
+  value: number;
+  class_ids: string[];
+  max_uses: number | null;
+  once_per_user: boolean;
+  starts_at: string | null;
+  expires_at: string | null;
+  active: boolean;
+  created_by: string | null;
   created_at: string;
 }
 
