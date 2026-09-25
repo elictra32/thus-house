@@ -3,7 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: { default: "THUS House of Traders — THUS Member", template: "%s · THUS House" },
-  description: "THUS Members Class — หลักสูตรพัฒนาเทรดเดอร์ตั้งแต่พื้นฐานสู่มืออาชีพภายใน 1 ปีเต็ม เรียนสดทุกสัปดาห์ พร้อม Trader Support ส่วนตัว",
+  description: "THUS Members Class — หลักสูตรพัฒนาเทรดเดอร์ตั้งแต่พื้นฐานสู่มืออาชีพ ตลอด 1 ปีเต็ม เรียนสดทุกสัปดาห์ พร้อม Trader Support ส่วนตัว",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
