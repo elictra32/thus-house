@@ -506,7 +506,7 @@ grant execute on function public.get_id_card(uuid) to service_role;
 
 -- ---------- 1 คนหลาย Role: users.role = Role หลัก, user_roles = Role เพิ่มเติม (สิทธิ์รวมกัน) ----------
 create table if not exists public.user_roles (
-  user_id uuid not null references public.users(id) on delete cascade,
+  user_id uuid not null,  -- ไม่ใส่ FK ไป users: ถ้ามี PostgREST จะเห็น users↔roles 2 ทาง แล้ว embed roles(...) พัง (ลบตามด้วย trigger ด้านล่าง)
   role_id text not null references public.roles(id) on update cascade on delete cascade,
   created_at timestamptz not null default now(),
   primary key (user_id, role_id)
@@ -559,3 +559,16 @@ update public.roles set permissions = '{dashboard,payments,members,classes,live,
   description = 'ทำได้ทุกอย่าง ยกเว้นเปลี่ยน Role ตัวเอง / แตะ Head Admin / แก้นิยาม Role' where id = 'admin';
 update public.roles set description = 'สูงกว่า Member: เลือกสมาชิกมาดูแล + จดโน้ตประวัติ' where id = 'mentor';
 update public.roles set description = 'ระดับต่ำสุด เรียนคอร์สที่ซื้อได้' where id = 'member';
+
+-- user_roles ไม่มี FK ไป users (ดูเหตุผลด้านบน) → ลบแถวตามเมื่อลบผู้ใช้
+alter table public.user_roles drop constraint if exists user_roles_user_id_fkey;
+create or replace function public.cleanup_user_roles() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  delete from user_roles where user_id = old.id;
+  delete from mentor_members where mentor_id = old.id or member_id = old.id;
+  return old;
+end $$;
+revoke execute on function public.cleanup_user_roles() from public, anon, authenticated;
+drop trigger if exists cleanup_user_roles on public.users;
+create trigger cleanup_user_roles after delete on public.users for each row execute function public.cleanup_user_roles();
