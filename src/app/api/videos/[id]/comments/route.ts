@@ -3,6 +3,7 @@ import { requireApiUser, jsonError } from "@/lib/auth";
 import { adminEmails } from "@/lib/admin";
 import { displayName, isCommunityStaff, publicPerson, videoAccess } from "@/lib/community";
 import { notifyDiscord } from "@/lib/discord";
+import { logMember } from "@/lib/member-log";
 
 type Row = { id: string; parent_id: string | null; body: string; created_at: string; user_id: string };
 type Author = { id: string; nickname: string | null; name: string | null; email: string; role: string; member_code: string | null; avatar_url: string | null };
@@ -111,6 +112,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .select("id")
     .single();
   if (error) return jsonError(error.message, 500);
+  await logMember(service, auth.user.id, "comment", { lesson: video.title, body: text.slice(0, 200), reply: !!parentId });
 
   const { data: me } = await service.from("users").select("nickname, name, email, member_code").eq("id", auth.user.id).maybeSingle();
   const who = [me?.member_code, displayName(me)].filter(Boolean).join(" ");

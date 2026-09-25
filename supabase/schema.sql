@@ -453,3 +453,101 @@ grant execute on function public.session_release(text) to authenticated;
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('avatars', 'avatars', true, 204800, '{image/webp,image/jpeg,image/png}')
 on conflict (id) do update set public = true, file_size_limit = 204800, allowed_mime_types = '{image/webp,image/jpeg,image/png}';
+
+-- ---------- ข้อมูลสมาชิกเพิ่มเติม ----------
+alter table public.users add column if not exists birth_date date;             -- วันเกิด (กรอกตอนสมัคร)
+alter table public.users add column if not exists address text;                -- ที่อยู่ (ออกใบกำกับภาษี)
+alter table public.users add column if not exists trading_markets text[] not null default '{}'; -- เคยเทรดอะไร
+alter table public.users add column if not exists trading_years text;          -- ประสบการณ์เทรด (ช่วงปี)
+alter table public.users add column if not exists learning_goal text;          -- เป้าหมายในการเรียน
+alter table public.users add column if not exists id_card_enc bytea;           -- เลขบัตรประชาชน (เข้ารหัส)
+alter table public.users add column if not exists id_card_last4 text;          -- 4 ตัวท้าย (แสดงแบบซ่อน)
+
+-- สมัครใหม่: เก็บวันเกิดจาก metadata ด้วย
+create or replace function public.handle_new_user()
+returns trigger language plpgsql security definer set search_path = public as $$
+declare bd date;
+begin
+  begin bd := (new.raw_user_meta_data->>'birth_date')::date; exception when others then bd := null; end;
+  insert into public.users (id, email, name, phone, nickname, birth_date)
+  values (new.id, new.email, new.raw_user_meta_data->>'name', new.raw_user_meta_data->>'phone', new.raw_user_meta_data->>'nickname', bd)
+  on conflict (id) do nothing;
+  return new;
+end $$;
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+-- เลขบัตรประชาชน: เข้ารหัสด้วยกุญแจใน Supabase Vault (สร้างในฐานข้อมูล ไม่มีใครเห็นค่า)
+-- เรียกได้เฉพาะ service role — API ตรวจสิทธิ์ (เจ้าของบัญชี / Admin สิทธิ์ members) และบันทึก Log ทุกครั้งที่เปิดดู
+do $$ begin
+  if not exists (select 1 from vault.secrets where name = 'id_card_key') then
+    perform vault.create_secret(encode(extensions.gen_random_bytes(32), 'hex'), 'id_card_key', 'กุญแจเข้ารหัสเลขบัตรประชาชน');
+  end if;
+end $$;
+
+create or replace function public.set_id_card(uid uuid, plain text) returns void
+language plpgsql security definer set search_path = public, extensions as $$
+declare k text := (select decrypted_secret from vault.decrypted_secrets where name = 'id_card_key');
+begin
+  if plain is null or plain = '' then
+    update users set id_card_enc = null, id_card_last4 = null where id = uid;
+  else
+    update users set id_card_enc = pgp_sym_encrypt(plain, k), id_card_last4 = right(plain, 4) where id = uid;
+  end if;
+end $$;
+create or replace function public.get_id_card(uid uuid) returns text
+language sql stable security definer set search_path = public, extensions as $$
+  select pgp_sym_decrypt(u.id_card_enc, (select decrypted_secret from vault.decrypted_secrets where name = 'id_card_key'))
+    from users u where u.id = uid and u.id_card_enc is not null;
+$$;
+revoke all on function public.set_id_card(uuid, text) from public, anon, authenticated;
+revoke all on function public.get_id_card(uuid) from public, anon, authenticated;
+grant execute on function public.set_id_card(uuid, text) to service_role;
+grant execute on function public.get_id_card(uuid) to service_role;
+
+-- ---------- 1 คนหลาย Role: users.role = Role หลัก, user_roles = Role เพิ่มเติม (สิทธิ์รวมกัน) ----------
+create table if not exists public.user_roles (
+  user_id uuid not null references public.users(id) on delete cascade,
+  role_id text not null references public.roles(id) on update cascade on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (user_id, role_id)
+);
+alter table public.user_roles enable row level security;
+create index if not exists user_roles_role on public.user_roles (role_id);
+
+-- Mentor: ดูแลสมาชิกที่เพิ่มไว้ + จดโน้ตได้
+insert into public.roles (id, name, description, permissions, is_system) values
+  ('mentor', 'Mentor', 'ดูแลสมาชิกที่รับผิดชอบ จดโน้ตประวัติได้', '{mentor}', false)
+on conflict (id) do nothing;
+
+create table if not exists public.mentor_members (
+  mentor_id uuid not null references public.users(id) on delete cascade,
+  member_id uuid not null references public.users(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (mentor_id, member_id)
+);
+alter table public.mentor_members enable row level security;
+create index if not exists mentor_members_member on public.mentor_members (member_id);
+
+create table if not exists public.member_notes (
+  id uuid primary key default gen_random_uuid(),
+  member_id uuid not null references public.users(id) on delete cascade,
+  author_id uuid references public.users(id) on delete set null,
+  body text not null check (length(body) between 1 and 4000),
+  created_at timestamptz not null default now()
+);
+alter table public.member_notes enable row level security;
+create index if not exists member_notes_member on public.member_notes (member_id, created_at desc);
+
+-- ---------- Log สมาชิก: แต่ละคนทำอะไร (ล็อกอิน, เปิดบทเรียน, คอมเมนต์, ส่งสลิป, แก้โปรไฟล์ ...) เก็บ 180 วัน ----------
+create table if not exists public.member_logs (
+  id bigint generated always as identity primary key,
+  user_id uuid not null references public.users(id) on delete cascade,
+  action text not null,
+  details jsonb,
+  created_at timestamptz not null default now()
+);
+alter table public.member_logs enable row level security;
+create index if not exists member_logs_user on public.member_logs (user_id, created_at desc);
+create index if not exists member_logs_time on public.member_logs (created_at desc);
+-- ตารางด้านบนไม่มี policy = เข้าถึงได้เฉพาะ API ฝั่ง server (service role)
+revoke all on public.user_roles, public.mentor_members, public.member_notes, public.member_logs from anon, authenticated;

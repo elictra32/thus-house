@@ -5,27 +5,36 @@ import { unconfirmedUserIds } from "@/lib/email-confirm";
 import { isAdminEmail } from "@/lib/admin";
 import type { Permission } from "@/lib/permissions";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { loadMentors, loadNotes } from "@/lib/member-notes";
 
 type P = { id: string };
 
 // บัญชีที่มีสิทธิ์จัดการ Role (Head Admin / เจ้าของระบบ) — คนที่ไม่มีสิทธิ์ roles แก้หรือลบไม่ได้
 async function guardTarget(service: SupabaseClient, id: string, perms: Set<Permission>) {
-  const { data: target } = await service.from("users").select("email, roles(permissions)").eq("id", id).maybeSingle();
+  const [{ data: target }, { data: extra }] = await Promise.all([
+    service.from("users").select("email, roles(permissions)").eq("id", id).maybeSingle(),
+    service.from("user_roles").select("roles(permissions)").eq("user_id", id),
+  ]);
   if (!target) return { target: null, error: null };
   if (isAdminEmail(target.email)) return { target, error: jsonError("บัญชีเจ้าของระบบแก้ไขหรือลบจากหน้านี้ไม่ได้", 403) };
-  const privileged = ((target.roles as unknown as { permissions: string[] } | null)?.permissions ?? []).includes("roles");
+  const privileged = [target, ...(extra ?? [])].some((r) =>
+    ((r.roles as unknown as { permissions: string[] } | null)?.permissions ?? []).includes("roles"));
   if (privileged && !perms.has("roles")) return { target, error: jsonError("ไม่มีสิทธิ์แก้ไขบัญชี Head Admin", 403) };
   return { target, error: null };
 }
 
 export const GET = adminRoute<P>("members", async (_req, { service }, { id }) => {
-  const [user, purchases, watched, videoLogs] = await Promise.all([
+  const [user, purchases, watched, videoLogs, extraRoles, notes, memberLogs, mentors] = await Promise.all([
     service.from("users").select("*, roles(name)").eq("id", id).maybeSingle(),
     service.from("purchases").select("*, classes(id, name, videos_count)").eq("user_id", id).order("created_at", { ascending: false }),
     service.from("watched_videos").select("video_id, videos(class_id)").eq("user_id", id),
     // ประวัติเปิดบทเรียน 100 ครั้งล่าสุด (บันทึกโดย /api/videos/[id]/source)
     service.from("video_access_logs").select("id, blocked, ip, created_at, videos(title), classes(name)")
       .eq("user_id", id).order("created_at", { ascending: false }).limit(100),
+    service.from("user_roles").select("role_id").eq("user_id", id),
+    loadNotes(service, id),
+    service.from("member_logs").select("id, action, details, created_at").eq("user_id", id).order("created_at", { ascending: false }).limit(200),
+    loadMentors(service, id),
   ]);
   if (!user.data) return jsonError("ไม่พบสมาชิก", 404);
 
@@ -42,6 +51,10 @@ export const GET = adminRoute<P>("members", async (_req, { service }, { id }) =>
     emailConfirmed,
     isOwner: isAdminEmail(user.data.email),
     videoLogs: videoLogs.data ?? [],
+    extraRoles: (extraRoles.data ?? []).map((r) => r.role_id),
+    notes,
+    memberLogs: memberLogs.data ?? [],
+    mentors,
   });
 });
 
@@ -86,12 +99,27 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
     if (!exists) return jsonError("ไม่พบ Role นี้");
     update.role = role;
   }
-  if (!Object.keys(update).length) return jsonError("ไม่มีข้อมูลที่จะแก้ไข");
+  // Role เพิ่มเติม (1 คนหลาย Role)
+  let extraRoles: string[] | null = null;
+  if ("extra_roles" in body) {
+    if (!perms.has("roles")) return jsonError("ไม่มีสิทธิ์เปลี่ยน Role", 403);
+    if (id === me.id) return jsonError("เปลี่ยน Role ของตัวเองไม่ได้");
+    const list = Array.isArray(body.extra_roles) ? body.extra_roles.filter((r): r is string => typeof r === "string") : [];
+    const { data: valid } = await service.from("roles").select("id").in("id", list.length ? list : ["-"]);
+    extraRoles = (valid ?? []).map((r) => r.id).filter((r) => r !== "member");
+  }
+  if (!Object.keys(update).length && !extraRoles) return jsonError("ไม่มีข้อมูลที่จะแก้ไข");
   // บัญชีเจ้าของระบบแก้จากหน้านี้ไม่ได้ ยกเว้น Discord ID (เจ้าของต้องผูกเพื่อกดอนุมัติใน Discord)
   const onlyDiscord = Object.keys(update).every((k) => k === "discord_id");
   const guard = await guardTarget(service, id, perms);
   if (guard.error && !onlyDiscord) return guard.error;
 
+  if (extraRoles) {
+    must(await service.from("user_roles").delete().eq("user_id", id));
+    if (extraRoles.length) must(await service.from("user_roles").insert(extraRoles.map((role_id) => ({ user_id: id, role_id }))));
+    await logAdmin(service, email, "update", "user_roles", id, { extra_roles: extraRoles });
+  }
+  if (!Object.keys(update).length) return ok();
   const user = check(await service.from("users").update(update).eq("id", id).select().single());
   await logAdmin(service, email, "update", "users", id, update);
   return ok({ user });

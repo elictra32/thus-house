@@ -33,6 +33,8 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
   const service = createServiceSupabase();
+  // Log สมาชิกเก็บ 180 วัน
+  await service.from("member_logs").delete().lt("created_at", new Date(Date.now() - 180 * 86400000).toISOString());
   const report: Record<string, unknown> = {};
 
   // ---------- 1) Usage ----------

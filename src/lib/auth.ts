@@ -27,12 +27,16 @@ export async function requirePageUser() {
 export const getPermissions = cache(async (userId: string | undefined, email: string | null | undefined) => {
   if (!userId) return new Set<Permission>();
   if (isAdminEmail(email)) return new Set<Permission>(ALL_PERMISSIONS);
-  const { data } = await createServiceSupabase()
-    .from("users").select("status, roles(permissions)").eq("id", userId).maybeSingle();
+  const service = createServiceSupabase();
+  const [{ data }, { data: extra }] = await Promise.all([
+    service.from("users").select("status, roles(permissions)").eq("id", userId).maybeSingle(),
+    // 1 คนหลาย Role: สิทธิ์ = Role หลัก + Role เพิ่มเติม (user_roles) รวมกัน
+    service.from("user_roles").select("roles(permissions)").eq("user_id", userId),
+  ]);
   // บัญชีที่ไม่ได้ active (inactive / suspended) ไม่มีสิทธิ์ Admin
   if (!data || data.status !== "active") return new Set<Permission>();
-  const perms = ((data.roles as unknown as { permissions: string[] } | null)?.permissions ?? []).filter(isPermission);
-  return new Set<Permission>(perms);
+  const lists = [data, ...(extra ?? [])].map((r) => (r.roles as unknown as { permissions: string[] } | null)?.permissions ?? []);
+  return new Set<Permission>(lists.flat().filter(isPermission));
 });
 
 // หน้า /admin: ต้องมีสิทธิ์ Admin อย่างน้อย 1 อย่าง (และสิทธิ์ perm ถ้าระบุ)

@@ -5,14 +5,17 @@ import { useRouter } from "next/navigation";
 import Input from "@/components/Input";
 import Button from "@/components/Button";
 import { api } from "@/lib/api-client";
+import BirthDateSelect from "@/components/BirthDateSelect";
+import { isBirthDate } from "@/lib/member-profile";
 
-type Fields = { name: string; nickname: string; phone: string; email: string; password: string; confirm: string };
+type Fields = { name: string; nickname: string; phone: string; birthDate: string; email: string; password: string; confirm: string };
 
 function validate(f: Fields) {
   const e: Partial<Fields> = {};
   if (!f.name.trim()) e.name = "กรุณากรอกชื่อ–นามสกุล";
   if (!f.nickname.trim()) e.nickname = "กรุณากรอกชื่อเล่น";
   if (!/^[0-9+\-\s]{9,20}$/.test(f.phone.trim())) e.phone = "กรุณากรอกเบอร์โทรให้ถูกต้อง";
+  if (!isBirthDate(f.birthDate)) e.birthDate = "กรุณาเลือกวัน เดือน ปีเกิดให้ครบ";
   if (!/^\S+@\S+\.\S+$/.test(f.email)) e.email = "รูปแบบอีเมลไม่ถูกต้อง";
   if (f.password.length < 8) e.password = "รหัสผ่านอย่างน้อย 8 ตัวอักษร";
   if (f.confirm !== f.password) e.confirm = "รหัสผ่านไม่ตรงกัน";
@@ -21,7 +24,7 @@ function validate(f: Fields) {
 
 export default function SignupForm() {
   const router = useRouter();
-  const [f, setF] = useState<Fields>({ name: "", nickname: "", phone: "", email: "", password: "", confirm: "" });
+  const [f, setF] = useState<Fields>({ name: "", nickname: "", phone: "", birthDate: "", email: "", password: "", confirm: "" });
   const [errors, setErrors] = useState<Partial<Fields>>({});
   const [error, setError] = useState("");
   const [done, setDone] = useState<"" | "email" | "admin">("");
@@ -41,6 +44,7 @@ export default function SignupForm() {
         name: f.name.trim(),
         nickname: f.nickname.trim(),
         phone: f.phone.trim(),
+        birthDate: f.birthDate,
         email: f.email.trim(),
         password: f.password,
       });
@@ -78,6 +82,7 @@ export default function SignupForm() {
       <Input label="ชื่อ–นามสกุล" name="name" autoComplete="name" value={f.name} onChange={set("name")} error={errors.name} />
       <Input label="ชื่อเล่น" name="nickname" autoComplete="nickname" value={f.nickname} onChange={set("nickname")} error={errors.nickname} />
       <Input label="เบอร์โทร" name="phone" type="tel" autoComplete="tel" inputMode="tel" value={f.phone} onChange={set("phone")} error={errors.phone} />
+      <BirthDateSelect label="วันเดือนปีเกิด" value={f.birthDate} onChange={(v) => setF({ ...f, birthDate: v })} error={errors.birthDate} />
       <Input label="อีเมล" name="email" type="email" autoComplete="email" value={f.email} onChange={set("email")} error={errors.email} />
       <Input label="รหัสผ่าน" name="password" type="password" autoComplete="new-password" value={f.password} onChange={set("password")} error={errors.password} />
       <Input label="ยืนยันรหัสผ่าน" name="confirm" type="password" autoComplete="new-password" value={f.confirm} onChange={set("confirm")} error={errors.confirm} />

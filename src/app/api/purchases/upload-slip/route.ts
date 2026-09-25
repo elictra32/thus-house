@@ -5,6 +5,7 @@ import { createServiceSupabase } from "@/lib/supabase-server";
 import { SLIP_MAX_BYTES, SLIP_TYPES, baht, isActivePurchase } from "@/lib/utils";
 import { notifyDiscord } from "@/lib/discord";
 import { botEnabled, postSlipReview } from "@/lib/discord-bot";
+import { logMember } from "@/lib/member-log";
 
 // ตรวจ magic bytes ว่าเป็น PNG/JPEG จริง ไม่ใช่แค่นามสกุล
 function sniffImage(buf: Uint8Array): "png" | "jpg" | null {
@@ -57,6 +58,7 @@ export async function POST(req: Request) {
     return jsonError(error.message, 500);
   }
 
+  await logMember(service, auth.user.id, "upload_slip", { class: cls.name, amount: cls.price });
   await service.from("notifications").insert({
     user_id: auth.user.id,
     type: "payment",

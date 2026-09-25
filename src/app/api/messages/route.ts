@@ -3,6 +3,7 @@ import { requireApiUser, jsonError } from "@/lib/auth";
 import { createServiceSupabase } from "@/lib/supabase-server";
 import { displayName } from "@/lib/community";
 import { notifyDiscord } from "@/lib/discord";
+import { logMember } from "@/lib/member-log";
 
 // ข้อความ/Feedback ถึงผู้สอน — สมาชิกเห็นเฉพาะของตัวเอง
 export async function GET() {
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
   }
   const { error } = await service.from("instructor_messages").insert({ user_id: auth.user.id, class_id: classId, body: text });
   if (error) return jsonError(error.message, 500);
+  await logMember(service, auth.user.id, "message", { class: className, body: text.slice(0, 200) });
 
   const { data: me } = await service.from("users").select("nickname, name, email, member_code").eq("id", auth.user.id).maybeSingle();
   await notifyDiscord(

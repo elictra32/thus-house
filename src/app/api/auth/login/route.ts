@@ -3,6 +3,7 @@ import { createServerSupabase, createServiceSupabase } from "@/lib/supabase-serv
 import { cookies } from "next/headers";
 import { jsonError } from "@/lib/auth";
 import { DEVICE_BUSY, SID_COOKIE, SID_COOKIE_OPTIONS } from "@/lib/device-session";
+import { logMember } from "@/lib/member-log";
 
 const NOT_CONFIRMED = "บัญชียังไม่ได้ยืนยันอีเมล — กดลิงก์ยืนยันในอีเมล หรือรอทีมงานยืนยันบัญชีให้";
 
@@ -33,6 +34,7 @@ export async function POST(req: Request) {
   const sid = cookies().get(SID_COOKIE)?.value || crypto.randomUUID();
   const { data: device } = await supabase.rpc("session_check", { sid });
   if (device === "busy") {
+    await logMember(service, data.user.id, "login_blocked");
     await supabase.auth.signOut({ scope: "local" });
     return jsonError(DEVICE_BUSY, 409);
   }
@@ -49,6 +51,7 @@ export async function POST(req: Request) {
     });
   }
 
+  await logMember(service, data.user.id, "login");
   const res = NextResponse.json({ ok: true });
   res.cookies.set(SID_COOKIE, sid, SID_COOKIE_OPTIONS);
   return res;

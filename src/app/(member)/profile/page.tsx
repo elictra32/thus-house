@@ -27,12 +27,20 @@ export default async function ProfilePage() {
       </div>
 
       <ProfileFields
-        name={profile?.name ?? ""}
-        nickname={profile?.nickname ?? ""}
-        phone={profile?.phone ?? ""}
-        email={user.email ?? ""}
-        memberCode={profile?.member_code ?? ""}
-        avatar={profile?.avatar_url ?? ""}
+        p={{
+          name: profile?.name ?? "",
+          nickname: profile?.nickname ?? "",
+          phone: profile?.phone ?? "",
+          email: user.email ?? "",
+          memberCode: profile?.member_code ?? "",
+          avatar: profile?.avatar_url ?? "",
+          birthDate: profile?.birth_date ?? "",
+          address: profile?.address ?? "",
+          idCardLast4: profile?.id_card_last4 ?? "",
+          markets: profile?.trading_markets ?? [],
+          years: profile?.trading_years ?? "",
+          goal: profile?.learning_goal ?? "",
+        }}
       />
 
       <section className="card overflow-hidden">

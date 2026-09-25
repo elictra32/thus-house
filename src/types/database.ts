@@ -15,6 +15,12 @@ export interface User {
   membership_end: string | null;
   last_login_at: string | null;
   avatar_url: string | null; // รูปโปรไฟล์ (bucket avatars)
+  birth_date: string | null; // YYYY-MM-DD
+  address: string | null; // ที่อยู่ออกใบกำกับภาษี
+  trading_markets: string[];
+  trading_years: string | null;
+  learning_goal: string | null;
+  id_card_last4: string | null; // เลขบัตรประชาชนเก็บแบบเข้ารหัส (id_card_enc) — แสดงแค่ 4 ตัวท้าย
   active_session: string | null; // รหัสเครื่องที่ล็อกอินอยู่ (ล็อกอินได้ทีละเครื่อง)
   active_session_seen: string | null;
   role: string; // id ใน roles

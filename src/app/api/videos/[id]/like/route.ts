@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiUser, jsonError } from "@/lib/auth";
 import { publicPerson, videoAccess } from "@/lib/community";
+import { logMember } from "@/lib/member-log";
 
 // กดไลก์ / เลิกไลก์บทเรียน
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
@@ -13,7 +14,10 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const key = { video_id: video.id, user_id: auth.user.id };
   const { data: existing } = await service.from("video_likes").select("video_id").match(key).maybeSingle();
   if (existing) await service.from("video_likes").delete().match(key);
-  else await service.from("video_likes").insert(key);
+  else {
+    await service.from("video_likes").insert(key);
+    await logMember(service, auth.user.id, "like_lesson", { lesson: video.title });
+  }
   const { data: rows } = await service
     .from("video_likes").select("user_id, created_at").eq("video_id", video.id).order("created_at", { ascending: false });
   const ids = (rows ?? []).map((r) => r.user_id);

@@ -6,6 +6,7 @@ import { createServiceSupabase } from "@/lib/supabase-server";
 import { adminEmails } from "@/lib/admin";
 import { driveEmbedUrl, youtubeId } from "@/lib/utils";
 import { notifyDiscord } from "@/lib/discord";
+import { logMember } from "@/lib/member-log";
 
 // ลิงก์วิดีโอส่งให้ทีละบทเท่านั้น (ฐานข้อมูลไม่ให้สมาชิกอ่าน video_url ตรงๆ)
 // ทุกครั้งบันทึกลง video_access_logs · เปิดบทเรียนต่างกันเกิน LIMIT บทใน 1 ชม. = ผิดปกติ → พักการขอลิงก์ + แจ้ง Admin
@@ -48,6 +49,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   if (!dupe) {
     const { error } = await service.from("video_access_logs").insert({ user_id: user.id, video_id: video.id, class_id: video.class_id, ip });
     if (error) console.error("video_access_logs insert failed", error.message);
+    await logMember(service, user.id, "open_lesson", { title: video.title, video_id: video.id });
   }
 
   const yt = youtubeId(video.video_url);

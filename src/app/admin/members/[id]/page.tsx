@@ -12,6 +12,7 @@ import { api } from "@/lib/api-client";
 import { useApi } from "@/lib/use-api";
 import { baht, formatDate, isActivePurchase, toBangkokDate } from "@/lib/utils";
 import type { Purchase, Role, User } from "@/types/database";
+import { ActivityList, MemberInfo, NotesPanel, type MemberLog, type Note } from "@/components/admin/MemberExtras";
 
 type Detail = {
   user: User & { roles: { name: string } | null };
@@ -20,6 +21,10 @@ type Detail = {
   emailConfirmed: boolean;
   isOwner: boolean;
   videoLogs: { id: number; blocked: boolean; ip: string | null; created_at: string; videos: { title: string } | null; classes: { name: string } | null }[];
+  extraRoles: string[];
+  notes: Note[];
+  memberLogs: MemberLog[];
+  mentors: { id: string; name: string | null; nickname: string | null; member_code: string | null }[];
 };
 
 export default function MemberDetail({ params }: { params: { id: string } }) {
@@ -33,7 +38,7 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  async function update(body: Record<string, string | boolean>) {
+  async function update(body: Record<string, string | boolean | string[]>) {
     setSaving(true);
     setActionError("");
     try {
@@ -148,6 +153,36 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
             ) : (
               <p>{user.roles?.name ?? user.role}</p>
             )}
+            {/* 1 คนหลาย Role: Role เพิ่มเติม สิทธิ์รวมกับ Role หลัก */}
+            {!data.isOwner && (canManageRoles || data.extraRoles.length > 0) && (
+              <div className="mt-3">
+                <p className="mb-1.5 text-xs text-muted">Role เพิ่มเติม (สิทธิ์รวมกัน)</p>
+                {canManageRoles && roleList && me?.user?.id !== user.id ? (
+                  <div className="flex flex-wrap gap-2">
+                    {roleList.roles.filter((r) => r.id !== "member" && r.id !== user.role).map((r) => {
+                      const on = data.extraRoles.includes(r.id);
+                      return (
+                        <button
+                          key={r.id}
+                          disabled={saving}
+                          onClick={() => update({ extra_roles: on ? data.extraRoles.filter((x) => x !== r.id) : [...data.extraRoles, r.id] })}
+                          className={`rounded-full px-3 py-1.5 text-xs ring-1 ring-inset transition ${on ? "bg-brand/25 font-bold ring-brand" : "text-muted ring-edge hover:text-ink"}`}
+                        >
+                          {on ? "✓ " : "+ "}{r.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p>{data.extraRoles.join(", ") || "-"}</p>
+                )}
+              </div>
+            )}
+            {data.mentors.length > 0 && (
+              <p className="mt-3 text-xs text-muted">
+                Mentor ที่ดูแล: <span className="text-ink">{data.mentors.map((m) => [m.member_code, m.nickname || m.name].filter(Boolean).join(" ")).join(", ")}</span>
+              </p>
+            )}
           </div>
           {(canManageRoles || user.discord_id) && (
             <div className="border-t border-line pt-4">
@@ -163,6 +198,7 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
           )}
         </div>
 
+        <div className="min-w-0 space-y-6">
         <div className="card overflow-x-auto">
           <h3 className="p-5 font-bold">การซื้อและความคืบหน้า</h3>
           <table className="w-full min-w-[720px]">
@@ -188,6 +224,23 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
             </tbody>
           </table>
         </div>
+        <div className="grid gap-6 xl:grid-cols-2">
+        <MemberInfo
+          birthDate={user.birth_date}
+          markets={user.trading_markets ?? []}
+          years={user.trading_years}
+          goal={user.learning_goal}
+          address={user.address}
+          idCardLast4={user.id_card_last4}
+          idCardUrl={`/api/admin/users/${user.id}/id-card`}
+        />
+        <NotesPanel memberId={user.id} notes={data.notes} me={me?.user?.id} canDeleteAll onChange={reload} />
+      </div>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <ActivityList logs={data.memberLogs} title="กิจกรรมของสมาชิก (200 รายการล่าสุด)" />
       </div>
 
       <div className="card mt-6 overflow-x-auto">

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireApiUser, jsonError } from "@/lib/auth";
 import { createServiceSupabase } from "@/lib/supabase-server";
+import { logMember } from "@/lib/member-log";
 
 const BUCKET = "avatars";
 const MAX_BYTES = 150 * 1024; // เบราว์เซอร์ย่อเหลือ 256px ก่อนส่ง (ปกติ 10–30KB)
@@ -32,6 +33,7 @@ export async function POST(req: Request) {
   const url = service.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
   const { error: saveError } = await service.from("users").update({ avatar_url: url }).eq("id", auth.user.id);
   if (saveError) return jsonError(saveError.message, 500);
+  await logMember(service, auth.user.id, "avatar");
   return NextResponse.json({ url });
 }
 
