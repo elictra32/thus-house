@@ -53,14 +53,17 @@ export const PUT = adminRoute("members", async (req, { service, email, user }) =
   // เคลียร์รหัสเดิมของคนที่เปลี่ยนก่อน (กันชน unique index ตอนสลับรหัสกัน)
   const codeRows = rows.filter((r) => r.member_code !== undefined);
   if (codeRows.length) await service.from("users").update({ member_code: null }).in("id", codeRows.map((r) => r.id));
-  for (const r of rows) {
-    const update: Record<string, unknown> = {};
-    if (r.member_code !== undefined) update.member_code = r.member_code || null;
-    if (r.nickname !== undefined) update.nickname = r.nickname.trim();
-    if (r.status !== undefined) update.status = r.status;
-    if (!Object.keys(update).length) continue;
-    const { error } = await service.from("users").update(update).eq("id", r.id);
-    if (error) return jsonError(`บันทึกไม่สำเร็จบางรายการ: ${error.message}`, 500);
+  // บันทึกพร้อมกันทีละ 20 แถว (เร็วกว่าทีละแถวมาก)
+  for (let i = 0; i < rows.length; i += 20) {
+    const results = await Promise.all(rows.slice(i, i + 20).map((r) => {
+      const update: Record<string, unknown> = {};
+      if (r.member_code !== undefined) update.member_code = r.member_code || null;
+      if (r.nickname !== undefined) update.nickname = r.nickname.trim();
+      if (r.status !== undefined) update.status = r.status;
+      return Object.keys(update).length ? service.from("users").update(update).eq("id", r.id) : null;
+    }));
+    const failed = results.find((res) => res?.error);
+    if (failed?.error) return jsonError(`บันทึกไม่สำเร็จบางรายการ: ${failed.error.message}`, 500);
   }
   await logAdmin(service, email, "bulk_update", "users", null, { count: rows.length, rows });
   return ok({ updated: rows.length });

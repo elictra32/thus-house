@@ -645,3 +645,13 @@ revoke all on function public.presence_ping(uuid) from public, anon, authenticat
 revoke all on function public.presence_stats(timestamptz) from public, anon, authenticated;
 grant execute on function public.presence_ping(uuid) to service_role;
 grant execute on function public.presence_stats(timestamptz) to service_role;
+
+-- ---------- ปิดสิทธิ์ตารางให้แคบสุด (ตรวจความปลอดภัย 25 ก.ย. 2569) ----------
+-- เว็บเขียนข้อมูลผ่าน API ฝั่ง server (service role) เป็นหลัก · anon อ่านได้แค่คอร์ส/รูปหน้าแรก
+revoke all on all tables in schema public from anon;
+revoke insert, update, delete, truncate, references, trigger on all tables in schema public from authenticated;
+revoke all on public.admin_logs, public.roles from authenticated;
+grant select on public.classes, public.gallery_items to anon;
+grant select, insert, update, delete on public.watched_videos to authenticated;
+grant update (is_read) on public.notifications to authenticated;
+create index if not exists member_notes_author on public.member_notes (author_id);

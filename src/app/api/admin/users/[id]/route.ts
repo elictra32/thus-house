@@ -41,6 +41,7 @@ export const GET = adminRoute<P>("members", async (_req, { service, user: me, pe
     lastSeen: (pres ?? []).reduce<string | null>((m, p) => (!m || p.last_seen > m ? p.last_seen : m), null),
   };
   if (!user.data) return jsonError("ไม่พบสมาชิก", 404);
+  delete (user.data as Record<string, unknown>).id_card_enc; // เปิดดูเลขบัตรผ่านปุ่ม "แสดง" เท่านั้น (บันทึก Log)
 
   const watchedByClass: Record<string, number> = {};
   for (const w of (watched.data ?? []) as unknown as { videos: { class_id: string } | null }[]) {

@@ -12,7 +12,7 @@ export const GET = adminRoute("members", async (req, { service }) => {
   const PAGE_SIZE = [20, 100, 200].includes(Number(sp.get("size"))) ? Number(sp.get("size")) : DEFAULT_SIZE;
 
   const unconfirmed = await unconfirmedUserIds(service);
-  let query = service.from("users").select("*, roles!users_role_fkey(name)", { count: "exact" }).order("created_at", { ascending: false });
+  let query = service.from("users").select("id, email, name, nickname, phone, member_code, role, status, created_at, avatar_url, roles!users_role_fkey(name)", { count: "exact" }).order("created_at", { ascending: false });
   if (q) {
     const safe = q.replace(/[,()%]/g, " ");
     query = query.or(`name.ilike.%${safe}%,nickname.ilike.%${safe}%,member_code.ilike.%${safe}%,email.ilike.%${safe}%,phone.ilike.%${safe}%`);
