@@ -81,3 +81,9 @@ export const STATUS_LABEL: Record<string, string> = {
   live: "กำลังไลฟ์",
   ended: "จบแล้ว",
 };
+
+// ภาพปกคลิป YouTube (hqdefault มีทุกคลิป · เป็น 4:3 มีขอบดำ ครอปด้วย object-cover แล้วพอดี 16:9)
+export function youtubeThumb(url: string | null | undefined) {
+  const id = url ? youtubeId(url) : null;
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}

@@ -1,3 +1,4 @@
+import { youtubeThumb } from "./utils";
 import { num, oneOf, str, url, ValidationError } from "./validate";
 
 // แปลง body → คอลัมน์ที่อนุญาตให้บันทึก (ป้องกันการส่งคอลัมน์อื่นเข้ามา)
@@ -31,6 +32,8 @@ export function videoFields(b: Record<string, unknown>, creating: boolean) {
     ["duration_seconds", () => Math.round(num(b, "duration_seconds", { min: 0 }) ?? 0)],
   ], creating);
   if (creating) out.class_id = str(b, "class_id", { required: true });
+  // ภาพปกบทเรียน = ภาพปกคลิป YouTube (Drive ไม่มี)
+  if ("video_url" in out) out.thumbnail_url = youtubeThumb(out.video_url as string);
   return out;
 }
 
