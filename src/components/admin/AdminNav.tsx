@@ -10,6 +10,7 @@ const items: { href: string; label: string; icon: string; perm?: Permission }[] 
   { href: "/admin", label: "Dashboard", icon: "▦" },
   { href: "/admin/payments", label: "อนุมัติการชำระเงิน", icon: "✓", perm: "payments" },
   { href: "/admin/members", label: "สมาชิก", icon: "👥", perm: "members" },
+  { href: "/admin/discounts", label: "โค้ดส่วนลด", icon: "🏷", perm: "payments" },
   { href: "/admin/classes", label: "คอร์ส & วิดีโอ", icon: "▶", perm: "classes" },
   { href: "/admin/live-classes", label: "Live Classes", icon: "●", perm: "live" },
   { href: "/admin/messages", label: "ข้อความถึงผู้สอน", icon: "💬", perm: "community" },

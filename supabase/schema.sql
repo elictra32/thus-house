@@ -572,3 +572,29 @@ end $$;
 revoke execute on function public.cleanup_user_roles() from public, anon, authenticated;
 drop trigger if exists cleanup_user_roles on public.users;
 create trigger cleanup_user_roles after delete on public.users for each row execute function public.cleanup_user_roles();
+
+-- ---------- โค้ดส่วนลด (Admin สร้างที่ Admin → โค้ดส่วนลด · ตรวจ/คำนวณใน src/lib/discount.ts) ----------
+create table if not exists public.discount_codes (
+  code text primary key check (code ~ '^[A-Z0-9_-]{3,30}$'),
+  description text,
+  kind text not null default 'percent' check (kind in ('percent', 'amount')),  -- ลดเป็น % หรือเป็นบาท
+  value numeric not null check (value > 0),
+  class_ids uuid[] not null default '{}',     -- ว่าง = ใช้ได้ทุกคลาส
+  max_uses int check (max_uses is null or max_uses > 0),  -- null = ไม่จำกัด
+  once_per_user boolean not null default true,
+  starts_at timestamptz,
+  expires_at timestamptz,
+  active boolean not null default true,
+  created_by text,
+  created_at timestamptz not null default now(),
+  constraint discount_percent_max check (kind <> 'percent' or value <= 100)
+);
+alter table public.discount_codes enable row level security;
+revoke all on public.discount_codes from anon, authenticated;
+
+-- การซื้อเก็บราคาเต็ม / โค้ด / ส่วนลด / รหัสยืนยันโค้ด (amount = ยอดที่ต้องโอนหลังหักส่วนลด)
+alter table public.purchases add column if not exists original_amount numeric;
+alter table public.purchases add column if not exists discount_code text references public.discount_codes(code) on update cascade on delete set null;
+alter table public.purchases add column if not exists discount_amount numeric;
+alter table public.purchases add column if not exists discount_ref text;
+create index if not exists purchases_discount_code on public.purchases (discount_code) where discount_code is not null;

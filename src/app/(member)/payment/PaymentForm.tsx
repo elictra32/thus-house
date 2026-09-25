@@ -8,6 +8,8 @@ import { BANK, SLIP_MAX_BYTES, SLIP_TYPES, baht } from "@/lib/utils";
 import type { Class } from "@/types/database";
 import { shrinkImage } from "@/lib/shrink-image";
 
+type Applied = { code: string; label: string; original: number; discount: number; final: number; ref: string };
+
 export default function PaymentForm({ classes, initialClassId }: { classes: Class[]; initialClassId?: string }) {
   const [classId, setClassId] = useState(
     classes.some((c) => c.id === initialClassId) ? initialClassId! : classes[0]?.id ?? "",
@@ -18,6 +20,32 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const selected = classes.find((c) => c.id === classId);
+  // โค้ดส่วนลด: ตรวจกับ server แล้วได้ราคาสุดท้าย + รหัสยืนยัน
+  const [codeInput, setCodeInput] = useState("");
+  const [applied, setApplied] = useState<Applied | null>(null);
+  const [codeError, setCodeError] = useState("");
+  const [checking, setChecking] = useState(false);
+  const total = applied ? applied.final : selected?.price ?? 0;
+
+  // เปลี่ยนคอร์ส → ต้องตรวจโค้ดใหม่ (บางโค้ดใช้ได้เฉพาะบางคลาส)
+  useEffect(() => {
+    setApplied(null);
+    setCodeError("");
+  }, [classId]);
+
+  async function applyCode() {
+    if (!codeInput.trim()) return setCodeError("กรุณากรอกโค้ด");
+    setChecking(true);
+    setCodeError("");
+    try {
+      setApplied(await api.post<Applied>("/api/discount", { code: codeInput, classId }));
+    } catch (err) {
+      setApplied(null);
+      setCodeError((err as Error).message);
+    } finally {
+      setChecking(false);
+    }
+  }
 
   useEffect(() => {
     if (!file) return setPreview(null);
@@ -44,10 +72,11 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
     e.preventDefault();
     setError("");
     if (!classId) return setError("กรุณาเลือกคอร์ส");
-    if (!file) return setError("กรุณาแนบสลิป");
+    if (!file && total > 0) return setError("กรุณาแนบสลิป");
     const form = new FormData();
     form.append("class_id", classId);
-    form.append("slip", await shrinkImage(file));
+    if (file) form.append("slip", await shrinkImage(file));
+    if (applied) form.append("discount_code", applied.code);
     setLoading(true);
     try {
       await api.post("/api/purchases/upload-slip", form);
@@ -99,12 +128,19 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
               เลขที่บัญชี <b className="text-lg tracking-wide">{BANK.account}</b>
             </div>
             <div>บัญชี <b>{BANK.owner}</b></div>
-            {selected && <div className="mt-1">ยอดโอน <b className="text-brand-light">{baht(selected.price)}</b></div>}
+            {selected && (
+              <div className="mt-1">
+                ยอดโอน <b className="text-brand-light">{baht(total)}</b>
+                {applied && <span className="ml-2 text-xs text-muted line-through">{baht(applied.original)}</span>}
+              </div>
+            )}
           </div>
         </div>
 
         <div>
-          <label htmlFor="slip" className="label">3. แนบหลักฐานการชำระเงิน (PNG, JPG ไม่เกิน 4MB)</label>
+          <label htmlFor="slip" className="label">
+            3. แนบหลักฐานการชำระเงิน (PNG, JPG ไม่เกิน 4MB){total === 0 && selected && " — ยอด 0 บาท ไม่ต้องแนบ"}
+          </label>
           <input
             id="slip"
             type="file"
@@ -129,12 +165,52 @@ export default function PaymentForm({ classes, initialClassId }: { classes: Clas
               <span className="text-muted">{selected.name}</span>
               <span>{baht(selected.price)}</span>
             </div>
+            {applied && (
+              <div className="flex justify-between gap-2 text-green-300">
+                <span>ส่วนลด ({applied.code})</span>
+                <span>−{baht(applied.discount)}</span>
+              </div>
+            )}
             <div className="flex justify-between border-t border-line pt-3 text-base font-bold">
               <span>ยอดชำระ</span>
-              <span>{baht(selected.price)}</span>
+              <span>{baht(total)}</span>
             </div>
           </div>
         )}
+
+        {/* โค้ดส่วนลด */}
+        <div className="mt-5 border-t border-line pt-4">
+          {applied ? (
+            <div className="rounded-xl border border-green-400/30 bg-green-500/10 p-3 text-sm">
+              <div className="flex items-start justify-between gap-2">
+                <p className="font-bold text-green-200">✓ ใช้โค้ด {applied.code} แล้ว</p>
+                <button type="button" onClick={() => { setApplied(null); setCodeInput(""); }} className="text-xs text-muted hover:text-ink">
+                  ยกเลิก
+                </button>
+              </div>
+              <p className="mt-0.5 text-green-100/90">{applied.label} · ประหยัด {baht(applied.discount)}</p>
+              <p className="mt-2 text-xs text-muted">
+                รหัสยืนยันโค้ด <b className="font-mono text-sm tracking-wider text-ink">{applied.ref}</b>
+              </p>
+            </div>
+          ) : (
+            <>
+              <label htmlFor="discount" className="label">มีโค้ดส่วนลด?</label>
+              <div className="flex gap-2">
+                <input
+                  id="discount"
+                  value={codeInput}
+                  onChange={(e) => setCodeInput(e.target.value.toUpperCase())}
+                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); applyCode(); } }}
+                  placeholder="กรอกโค้ด"
+                  className="w-full min-w-0 rounded-[10px] border border-edge bg-bg px-3 py-2.5 text-sm uppercase tracking-wide outline-none focus:border-brand"
+                />
+                <Button type="button" size="sm" variant="ghost" loading={checking} onClick={applyCode}>ใช้โค้ด</Button>
+              </div>
+              {codeError && <p className="mt-1.5 text-xs text-red-300">{codeError}</p>}
+            </>
+          )}
+        </div>
         <Button type="submit" loading={loading} className="mt-6 w-full">
           ยืนยันการชำระเงิน
         </Button>

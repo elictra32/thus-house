@@ -29,3 +29,27 @@ export function formatBirthDate(v: string | null | undefined) {
   if (!v) return "";
   return new Date(v + "T00:00:00Z").toLocaleDateString("th-TH", { dateStyle: "long", timeZone: "UTC" });
 }
+
+// ข้อมูลที่ต้องกรอกให้ครบก่อนซื้อคลาส (ใช้ทั้งหน้าชำระเงิน / หน้าโปรไฟล์ / API)
+export type ProfileCheck = {
+  name?: string | null; nickname?: string | null; phone?: string | null; birth_date?: string | null;
+  id_card_last4?: string | null; address?: string | null; trading_markets?: string[] | null;
+  trading_years?: string | null; learning_goal?: string | null;
+};
+export const REQUIRED_FIELDS: { key: string; label: string; ok: (u: ProfileCheck) => boolean }[] = [
+  { key: "name", label: "ชื่อ–นามสกุล", ok: (u) => !!u.name?.trim() },
+  { key: "nickname", label: "ชื่อเล่น", ok: (u) => !!u.nickname?.trim() },
+  { key: "phone", label: "เบอร์โทร", ok: (u) => !!u.phone?.trim() },
+  { key: "birth_date", label: "วันเดือนปีเกิด", ok: (u) => !!u.birth_date },
+  { key: "id_card", label: "เลขบัตรประชาชน", ok: (u) => !!u.id_card_last4 },
+  { key: "address", label: "ที่อยู่ (ใบกำกับภาษี)", ok: (u) => !!u.address?.trim() },
+  { key: "trading_years", label: "ประสบการณ์เทรด", ok: (u) => !!u.trading_years },
+  {
+    key: "trading_markets", label: "เคยเทรดอะไรมาบ้าง",
+    ok: (u) => u.trading_years === "ยังไม่เคยเทรด" || !!u.trading_markets?.length,
+  },
+  { key: "learning_goal", label: "เป้าหมายในการเรียน", ok: (u) => !!u.learning_goal?.trim() },
+];
+export function missingProfile(u: ProfileCheck | null | undefined) {
+  return REQUIRED_FIELDS.filter((f) => !u || !f.ok(u));
+}

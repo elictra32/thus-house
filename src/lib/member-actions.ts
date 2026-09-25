@@ -13,6 +13,7 @@ export const MEMBER_ACTIONS: Record<string, string> = {
   avatar: "เปลี่ยนรูปโปรไฟล์",
   view_id_card: "เปิดดูเลขบัตรประชาชน",
   login_blocked: "ล็อกอินไม่ได้ (ใช้อยู่อีกเครื่อง)",
+  discount_fail: "กรอกโค้ดส่วนลดไม่ผ่าน",
 };
 
 // ข้อความสั้นๆ อธิบายรายละเอียดของแต่ละ Log
@@ -24,9 +25,10 @@ export function describeLog(action: string, d: Record<string, unknown> | null) {
     case "comment": return `${s("lesson")}: ${s("body")}`;
     case "delete_comment": return s("body");
     case "like_lesson": return s("lesson");
-    case "upload_slip": return `${s("class")}${d.amount ? ` · ${Number(d.amount).toLocaleString()} บาท` : ""}`;
+    case "upload_slip": return `${s("class")}${d.amount !== undefined ? ` · ${Number(d.amount).toLocaleString()} บาท` : ""}${s("code") ? ` · โค้ด ${s("code")}` : ""}`;
     case "message": return `${s("class")}: ${s("body")}`;
     case "profile": return Array.isArray(d.fields) ? (d.fields as string[]).join(", ") : "";
+    case "discount_fail": return `${s("code")} — ${s("reason")}`;
     case "view_id_card": return d.by === "self" ? "ตัวเอง" : `โดย ${s("by")}`;
     default: return "";
   }
