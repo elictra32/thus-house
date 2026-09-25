@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { requireApiUser, jsonError } from "@/lib/auth";
 import { adminEmails } from "@/lib/admin";
-import { displayName, isCommunityStaff, videoAccess } from "@/lib/community";
+import { displayName, isCommunityStaff, publicPerson, videoAccess } from "@/lib/community";
 import { notifyDiscord } from "@/lib/discord";
 
 type Row = { id: string; parent_id: string | null; body: string; created_at: string; user_id: string };
-type Author = { id: string; nickname: string | null; name: string | null; email: string; role: string };
+type Author = { id: string; nickname: string | null; name: string | null; email: string; role: string; member_code: string | null; avatar_url: string | null };
 
 // รายการคอมเมนต์ของบทเรียน + จำนวนไลก์ (เฉพาะผู้มีสิทธิ์เรียนคอร์สนี้)
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
@@ -22,7 +22,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       .eq("video_id", video.id)
       .order("created_at", { ascending: true })
       .limit(500),
-    service.from("video_likes").select("user_id").eq("video_id", video.id),
+    service.from("video_likes").select("user_id, created_at").eq("video_id", video.id).order("created_at", { ascending: false }),
     service.from("roles").select("id, permissions"),
   ]);
   if (rowsError) {
@@ -32,9 +32,10 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   const comments = (rows ?? []) as Row[];
   const ids = comments.map((c) => c.id);
   // ดึงข้อมูลผู้เขียนแยก (ไม่ใช้ embed ของ PostgREST — ถ้า schema cache ไม่เห็น relationship คอมเมนต์จะหายทั้งหมด)
-  const authorIds = Array.from(new Set(comments.map((c) => c.user_id)));
+  // + คนที่กดหัวใจบทเรียน (แสดงว่าใครถูกใจบ้าง)
+  const authorIds = Array.from(new Set([...comments.map((c) => c.user_id), ...(vlikes ?? []).map((l) => l.user_id)]));
   const { data: authorRows } = authorIds.length
-    ? await service.from("users").select("id, nickname, name, email, role").in("id", authorIds)
+    ? await service.from("users").select("id, nickname, name, email, role, member_code, avatar_url").in("id", authorIds)
     : { data: [] as Author[] };
   const authors = new Map(((authorRows ?? []) as Author[]).map((a) => [a.id, a]));
   const { data: likes } = ids.length
@@ -51,16 +52,20 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
     video: {
       likes: vlikes?.length ?? 0,
       liked: !!vlikes?.some((l) => l.user_id === me),
+      likers: (vlikes ?? []).map((l) => ({ ...publicPerson(authors.get(l.user_id) ?? null), me: l.user_id === me })),
     },
     comments: comments.map((c) => {
       const u = authors.get(c.user_id) ?? null;
+      const who = publicPerson(u);
       const cl = (likes ?? []).filter((l) => l.comment_id === c.id);
       return {
         id: c.id,
         parentId: c.parent_id,
         body: c.body,
         createdAt: c.created_at,
-        author: displayName(u),
+        author: who.name,
+        code: who.code,
+        avatar: who.avatar,
         staff: !!u && (staffRoles.has(u.role) || owners.includes(u.email.toLowerCase())),
         mine: c.user_id === me,
         likes: cl.length,
@@ -107,8 +112,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     .single();
   if (error) return jsonError(error.message, 500);
 
-  const { data: me } = await service.from("users").select("nickname, name, email").eq("id", auth.user.id).maybeSingle();
-  const who = displayName(me);
+  const { data: me } = await service.from("users").select("nickname, name, email, member_code").eq("id", auth.user.id).maybeSingle();
+  const who = [me?.member_code, displayName(me)].filter(Boolean).join(" ");
   const { data: cls } = await service.from("classes").select("name").eq("id", video.class_id).maybeSingle();
 
   // แจ้งเตือน 🔔 คนในกระทู้เมื่อมีคนตอบ: เจ้าของคอมเมนต์ที่ถูกตอบ + เจ้าของกระทู้ + คนที่เคยตอบในกระทู้นี้ (ยกเว้นตัวเอง)

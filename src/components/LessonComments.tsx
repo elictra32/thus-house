@@ -1,6 +1,8 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api-client";
+import Avatar from "@/components/Avatar";
+import Modal from "@/components/Modal";
 
 type Comment = {
   id: string;
@@ -8,12 +10,26 @@ type Comment = {
   body: string;
   createdAt: string;
   author: string;
+  code: string | null;
+  avatar: string | null;
   staff: boolean;
   mine: boolean;
   likes: number;
   liked: boolean;
 };
-type Data = { canModerate: boolean; video: { likes: number; liked: boolean }; comments: Comment[] };
+type Liker = { code: string | null; name: string; avatar: string | null; me: boolean };
+type VideoLikes = { likes: number; liked: boolean; likers: Liker[] };
+type Data = { canModerate: boolean; video: VideoLikes; comments: Comment[] };
+
+// "THUS-001 บอส" — รหัสสมาชิกสีม่วงอ่อน ตามด้วยชื่อเล่น
+function Name({ code, name }: { code: string | null; name: string }) {
+  return (
+    <>
+      {code && <span className="text-brand-light">{code} </span>}
+      {name}
+    </>
+  );
+}
 
 function timeAgo(iso: string) {
   const s = Math.max(1, Math.floor((Date.now() - Date.parse(iso)) / 1000));
@@ -41,6 +57,7 @@ export default function LessonComments({ videoId }: { videoId: string }) {
   const [replyText, setReplyText] = useState("");
   const [posting, setPosting] = useState(false);
   const [highlight, setHighlight] = useState("");
+  const [showLikers, setShowLikers] = useState(false);
 
   const load = useCallback(() => {
     api
@@ -80,7 +97,7 @@ export default function LessonComments({ videoId }: { videoId: string }) {
   }
 
   async function likeVideo() {
-    const r = await api.post<{ liked: boolean; likes: number }>(`/api/videos/${videoId}/like`);
+    const r = await api.post<VideoLikes>(`/api/videos/${videoId}/like`);
     setData((d) => (d ? { ...d, video: r } : d));
   }
   async function likeComment(id: string) {
@@ -88,7 +105,7 @@ export default function LessonComments({ videoId }: { videoId: string }) {
     setData((d) => (d ? { ...d, comments: d.comments.map((c) => (c.id === id ? { ...c, ...r } : c)) } : d));
   }
   async function remove(c: Comment) {
-    if (!confirm(c.mine ? "ลบคอมเมนต์ของคุณ?" : `ลบคอมเมนต์ของ ${c.author}? (คำตอบใต้คอมเมนต์จะถูกลบด้วย)`)) return;
+    if (!confirm(c.mine ? "ลบคอมเมนต์ของคุณ?" : `ลบคอมเมนต์ของ ${[c.code, c.author].filter(Boolean).join(" ")}? (คำตอบใต้คอมเมนต์จะถูกลบด้วย)`)) return;
     try {
       await api.del(`/api/comments/${c.id}`);
       load();
@@ -107,17 +124,10 @@ export default function LessonComments({ videoId }: { videoId: string }) {
         highlight === c.id ? "bg-[#ec9e56]/15 ring-1 ring-inset ring-[#ec9e56]/40" : ""
       }`}
     >
-      <div
-        className={`flex shrink-0 items-center justify-center rounded-full font-bold ${reply ? "h-8 w-8 text-xs" : "h-10 w-10 text-sm"} ${
-          c.staff ? "bg-gradient-to-br from-[#ba94c7] to-[#ec9e56] text-[#2d183c]" : "bg-white/10 text-ink"
-        }`}
-        aria-hidden
-      >
-        {c.author.slice(0, 1).toUpperCase()}
-      </div>
+      <Avatar src={c.avatar} name={c.author} size={reply ? 32 : 40} staff={c.staff} />
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
-          <span className="font-bold">{c.author}</span>
+          <span className="font-bold"><Name code={c.code} name={c.author} /></span>
           {c.staff && <span className="rounded-full bg-[#ba94c7]/20 px-2 py-0.5 text-[11px] font-bold text-[#d9c2e3]">ทีมงาน</span>}
           <span className="text-xs text-subtle">{timeAgo(c.createdAt)}</span>
         </div>
@@ -155,6 +165,40 @@ export default function LessonComments({ videoId }: { videoId: string }) {
           <Heart filled={!!data?.video.liked} /> ชอบบทเรียนนี้ {data && data.video.likes > 0 && `· ${data.video.likes}`}
         </button>
       </div>
+
+      {/* ใครกดหัวใจบ้าง — กดเพื่อดูรายชื่อทั้งหมด */}
+      {data && data.video.likers.length > 0 && (
+        <button onClick={() => setShowLikers(true)} className="mt-3 flex items-center gap-2 text-left text-xs text-muted hover:text-ink">
+          <span className="flex -space-x-2">
+            {data.video.likers.slice(0, 5).map((l, i) => (
+              <span key={i} className="rounded-full ring-2 ring-card">
+                <Avatar src={l.avatar} name={l.name} size={24} />
+              </span>
+            ))}
+          </span>
+          <span>
+            ถูกใจโดย{" "}
+            <b className="font-semibold text-ink">
+              {data.video.likers.slice(0, 2).map((l) => (l.me ? "คุณ" : l.name)).join(", ")}
+            </b>
+            {data.video.likers.length > 2 && ` และอีก ${data.video.likers.length - 2} คน`}
+          </span>
+        </button>
+      )}
+      <Modal open={showLikers} onClose={() => setShowLikers(false)} title={`ถูกใจบทเรียนนี้ · ${data?.video.likes ?? 0} คน`}>
+        <ul className="max-h-[60vh] space-y-3 overflow-y-auto">
+          {data?.video.likers.map((l, i) => (
+            <li key={i} className="flex items-center gap-3 text-sm">
+              <Avatar src={l.avatar} name={l.name} size={36} />
+              <span className="font-semibold">
+                <Name code={l.code} name={l.name} />
+                {l.me && <span className="ml-1 font-normal text-subtle">(คุณ)</span>}
+              </span>
+              <span className="ml-auto text-[#e3a3a8]"><Heart filled /></span>
+            </li>
+          ))}
+        </ul>
+      </Modal>
 
       <form
         onSubmit={(e) => {
@@ -203,7 +247,7 @@ export default function LessonComments({ videoId }: { videoId: string }) {
                     onChange={(e) => setReplyText(e.target.value)}
                     rows={2}
                     maxLength={2000}
-                    placeholder={`ตอบ ${replyTo.author}...`}
+                    placeholder={`ตอบ ${[replyTo.code, replyTo.author].filter(Boolean).join(" ")}...`}
                     className="w-full resize-y rounded-xl border border-edge bg-bg px-3 py-2 text-sm outline-none focus:border-brand"
                   />
                   <div className="mt-2 flex justify-end gap-2">

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireApiUser, jsonError } from "@/lib/auth";
-import { videoAccess } from "@/lib/community";
+import { publicPerson, videoAccess } from "@/lib/community";
 
 // กดไลก์ / เลิกไลก์บทเรียน
 export async function POST(_req: Request, { params }: { params: { id: string } }) {
@@ -14,6 +14,16 @@ export async function POST(_req: Request, { params }: { params: { id: string } }
   const { data: existing } = await service.from("video_likes").select("video_id").match(key).maybeSingle();
   if (existing) await service.from("video_likes").delete().match(key);
   else await service.from("video_likes").insert(key);
-  const { count } = await service.from("video_likes").select("user_id", { count: "exact", head: true }).eq("video_id", video.id);
-  return NextResponse.json({ liked: !existing, likes: count ?? 0 });
+  const { data: rows } = await service
+    .from("video_likes").select("user_id, created_at").eq("video_id", video.id).order("created_at", { ascending: false });
+  const ids = (rows ?? []).map((r) => r.user_id);
+  const { data: people } = ids.length
+    ? await service.from("users").select("id, nickname, name, email, member_code, avatar_url").in("id", ids)
+    : { data: [] };
+  const byId = new Map((people ?? []).map((p) => [p.id, p]));
+  return NextResponse.json({
+    liked: !existing,
+    likes: ids.length,
+    likers: ids.map((uid) => ({ ...publicPerson(byId.get(uid) ?? null), me: uid === auth.user.id })),
+  });
 }

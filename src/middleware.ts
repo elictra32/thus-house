@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { SID_COOKIE, SID_COOKIE_OPTIONS } from "@/lib/device-session";
 
 const PROTECTED = ["/dashboard", "/classes", "/payment", "/profile", "/messages", "/admin"];
 
@@ -39,7 +40,25 @@ export async function middleware(request: NextRequest) {
     return res;
   };
 
-  if (!user && PROTECTED.some((p) => path.startsWith(p))) return redirectTo("/login");
+  const isProtected = PROTECTED.some((p) => path.startsWith(p));
+  if (!user && isProtected) return redirectTo("/login");
+
+  // ล็อกอินได้ทีละเครื่อง: เครื่องที่ถูกแทนที่ (เครื่องใหม่ล็อกอินหลังเครื่องนี้ไม่ได้ใช้งาน 24 ชม. / แอดมินปลดล็อก) ถูกออกจากระบบ
+  if (user && isProtected) {
+    const current = request.cookies.get(SID_COOKIE)?.value;
+    const sid = current || crypto.randomUUID();
+    const { data: device } = await supabase.rpc("session_check", { sid });
+    if (device === "busy") {
+      await supabase.auth.signOut({ scope: "local" });
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.search = "?kicked=1";
+      const res = NextResponse.redirect(url);
+      response.cookies.getAll().forEach((c) => res.cookies.set(c));
+      return res;
+    }
+    if (!current) response.cookies.set(SID_COOKIE, sid, SID_COOKIE_OPTIONS);
+  }
   if (user && (path === "/login" || path === "/signup")) return redirectTo("/dashboard");
 
   return response;

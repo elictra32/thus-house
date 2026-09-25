@@ -412,3 +412,44 @@ drop index if exists public.idx_purchases_status;
 drop index if exists public.idx_purchases_user_id;
 drop index if exists public.idx_videos_order_index;
 drop index if exists public.idx_watched_videos_user_id;
+
+-- ---------- ล็อกอินได้ทีละเครื่อง (สมาชิกทั่วไป) + รูปโปรไฟล์ ----------
+-- active_session = รหัสเครื่องที่ล็อกอินอยู่ (cookie thus_sid) · เครื่องอื่นล็อกอินไม่ได้จนกว่าจะออกจากระบบ
+-- หรือเครื่องเดิมไม่ได้ใช้งานเกิน 24 ชม. หรือแอดมินกด "ปลดล็อกอุปกรณ์" · ทีมงาน (role ≠ member) ไม่ล็อก
+alter table public.users add column if not exists active_session text;
+alter table public.users add column if not exists active_session_seen timestamptz;
+
+create or replace function public.session_check(sid text) returns text
+language plpgsql security definer set search_path = public as $$
+declare u users;
+begin
+  if auth.uid() is null or coalesce(sid, '') = '' then return 'none'; end if;
+  select * into u from users where id = auth.uid();
+  if not found or u.role <> 'member' then return 'ok'; end if;
+  if u.active_session = sid then
+    if u.active_session_seen is null or u.active_session_seen < now() - interval '5 minutes' then
+      update users set active_session_seen = now() where id = u.id;
+    end if;
+    return 'ok';
+  end if;
+  if u.active_session is null or u.active_session_seen is null or u.active_session_seen < now() - interval '24 hours' then
+    update users set active_session = sid, active_session_seen = now() where id = u.id;
+    return 'ok';
+  end if;
+  return 'busy';
+end $$;
+
+create or replace function public.session_release(sid text) returns void
+language sql security definer set search_path = public as $$
+  update users set active_session = null, active_session_seen = null
+   where id = auth.uid() and active_session = sid;
+$$;
+revoke all on function public.session_check(text) from public, anon;
+revoke all on function public.session_release(text) from public, anon;
+grant execute on function public.session_check(text) to authenticated;
+grant execute on function public.session_release(text) to authenticated;
+
+-- รูปโปรไฟล์ (ย่อในเบราว์เซอร์เหลือ 256px WebP ~10–30KB) · อัปโหลดผ่าน API (service role)
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('avatars', 'avatars', true, 204800, '{image/webp,image/jpeg,image/png}')
+on conflict (id) do update set public = true, file_size_limit = 204800, allowed_mime_types = '{image/webp,image/jpeg,image/png}';
