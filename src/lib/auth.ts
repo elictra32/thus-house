@@ -29,7 +29,7 @@ export const getPermissions = cache(async (userId: string | undefined, email: st
   if (isAdminEmail(email)) return new Set<Permission>(ALL_PERMISSIONS);
   const service = createServiceSupabase();
   const [{ data }, { data: extra }] = await Promise.all([
-    service.from("users").select("status, roles(permissions)").eq("id", userId).maybeSingle(),
+    service.from("users").select("status, roles!users_role_fkey(permissions)").eq("id", userId).maybeSingle(),
     // 1 คนหลาย Role: สิทธิ์ = Role หลัก + Role เพิ่มเติม (user_roles) รวมกัน
     service.from("user_roles").select("roles(permissions)").eq("user_id", userId),
   ]);
