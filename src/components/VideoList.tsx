@@ -27,14 +27,21 @@ export default function VideoList({
                 active ? "border-brand bg-brand/10" : "border-transparent",
               )}
             >
-              <span
-                className={cn(
-                  "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px]",
-                  done ? "bg-success text-bg" : "border border-edge text-muted",
+              {/* ภาพปกคลิป + เลขบท / ✓ ดูแล้ว */}
+              <span className="relative aspect-video w-24 shrink-0 overflow-hidden rounded-lg bg-raised">
+                {v.thumbnail_url && (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={v.thumbnail_url} alt="" loading="lazy" className="h-full w-full object-cover" />
                 )}
-                aria-label={done ? "ดูแล้ว" : "ยังไม่ได้ดู"}
-              >
-                {done ? "✓" : i + 1}
+                <span
+                  className={cn(
+                    "absolute left-1 top-1 grid h-5 min-w-5 place-items-center rounded-full px-1 text-[11px] font-bold",
+                    done ? "bg-success text-bg" : "bg-black/70 text-white",
+                  )}
+                  aria-label={done ? "ดูแล้ว" : "ยังไม่ได้ดู"}
+                >
+                  {done ? "✓" : i + 1}
+                </span>
               </span>
               <span className="flex-1">
                 <span className={cn("block", active && "font-semibold")}>{v.title}</span>

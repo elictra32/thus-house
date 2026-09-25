@@ -598,3 +598,13 @@ alter table public.purchases add column if not exists discount_code text referen
 alter table public.purchases add column if not exists discount_amount numeric;
 alter table public.purchases add column if not exists discount_ref text;
 create index if not exists purchases_discount_code on public.purchases (discount_code) where discount_code is not null;
+
+-- ภาพปกบทเรียน = ภาพปกคลิป YouTube (API ตั้งให้อัตโนมัติ) · เติมให้บทเรียนเก่า
+with ids as (
+  select id, coalesce(
+    substring(video_url from '[?&]v=([A-Za-z0-9_-]{11})'),
+    substring(video_url from 'youtu\.be/([A-Za-z0-9_-]{11})'),
+    substring(video_url from '/(?:embed|shorts|live)/([A-Za-z0-9_-]{11})')
+  ) yt from public.videos where thumbnail_url is null)
+update public.videos v set thumbnail_url = 'https://i.ytimg.com/vi/' || ids.yt || '/hqdefault.jpg'
+from ids where ids.id = v.id and ids.yt is not null;

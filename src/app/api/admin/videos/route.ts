@@ -17,6 +17,10 @@ export const POST = adminRoute("classes", async (req, { service, email }) => {
     await service.from("videos").insert({ ...fields, order_index: (last?.order_index ?? -1) + 1 }).select().single(),
   );
   await recountClass(service, video.class_id);
+  // คลาสยังไม่มีรูปปก → ใช้ภาพจากคลิปแรกที่เพิ่ม
+  if (video.thumbnail_url) {
+    await service.from("classes").update({ thumbnail_url: video.thumbnail_url }).eq("id", video.class_id).is("thumbnail_url", null);
+  }
   await logAdmin(service, email, "create", "videos", video.id, { title: video.title, class_id: video.class_id });
   return ok({ video });
 });

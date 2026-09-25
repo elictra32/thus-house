@@ -6,7 +6,7 @@ import { isActivePurchase } from "./utils";
 import type { LessonVideo } from "@/types/database";
 
 // คอลัมน์ที่สมาชิกอ่านได้ — ฐานข้อมูลไม่ให้สมาชิกอ่าน video_url (ต้องขอผ่าน API ทีละบท)
-const LESSON_COLUMNS = "id, class_id, title, description, duration_seconds, order_index, created_at";
+const LESSON_COLUMNS = "id, class_id, title, description, duration_seconds, thumbnail_url, order_index, created_at";
 
 // ตรวจสิทธิ์เข้าเรียน: ต้องมี purchase ที่ approved และยังไม่หมดอายุ + บัญชียังใช้งานอยู่ (ผู้มีสิทธิ์ classes ดูได้ทุกคอร์ส)
 export async function getClassAccess(supabase: SupabaseClient, user: AuthUser, classId: string) {
