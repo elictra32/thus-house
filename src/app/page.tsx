@@ -15,11 +15,12 @@ export const dynamic = "force-dynamic";
 const INTRO_VIDEO_ID = "fQoh2I0_89w";
 
 // label แบ่งเป็นท่อน — ขึ้นบรรทัดใหม่ได้เฉพาะระหว่างท่อน (ภาษาไทยไม่ถูกตัดกลางคำบนมือถือ)
-const stats = [
-  { value: "1 ปีเต็ม", label: ["พัฒนาไปพร้อมกัน", "อย่างเป็นระบบ"] },
-  { value: "ทุกวันพุธ", label: ["เรียนสด", "20:30 – 22:30 น."] },
-  { value: "20", label: ["บทเรียน", "Class ปรับพื้นฐาน"] },
-  { value: "200+", label: ["วิดีโอย้อนหลัง", "ตั้งแต่รุ่น 1"] },
+// value แบ่งเป็นท่อนได้เหมือนกัน (คำยาวขึ้นบรรทัดใหม่ระหว่างท่อน ไม่ตัดกลางคำ)
+const stats: { value: string[]; label: string[] }[] = [
+  { value: ["1 ปีเต็ม"], label: ["พัฒนาไปพร้อมกัน", "อย่างเป็นระบบ"] },
+  { value: ["เรียนสด"], label: ["ทุกวันพุธ", "เวลา 20:30 – 22:30 น."] },
+  { value: ["Class", "ปรับพื้นฐาน"], label: ["20 บทเรียน"] },
+  { value: ["วิดีโอ", "ย้อนหลัง"], label: ["200+ คลิป", "ตั้งแต่รุ่น 1"] },
 ];
 
 const highlights = [
@@ -177,8 +178,15 @@ export default async function Landing() {
         {/* ตัวเลขสรุป */}
         <div className="relative mt-12 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-charcoal/10 bg-charcoal/10 md:mt-16 lg:grid-cols-4">
           {stats.map((s) => (
-            <div key={s.value} className="bg-paper-light/90 px-5 py-5 sm:px-6 sm:py-6">
-              <div className="text-[26px] font-extrabold leading-none tracking-[-0.03em] text-accent sm:text-3xl lg:text-4xl">{s.value}</div>
+            <div key={s.value.join("")} className="bg-paper-light/90 px-5 py-5 sm:px-6 sm:py-6">
+              <div className="text-[26px] font-extrabold leading-[1.05] tracking-[-0.03em] text-accent sm:text-3xl lg:text-[32px]">
+                {s.value.map((part, i) => (
+                  <Fragment key={part}>
+                    {i > 0 && " "}
+                    <span className="whitespace-nowrap">{part}</span>
+                  </Fragment>
+                ))}
+              </div>
               <div className="mt-2.5 text-[13px] leading-snug text-charcoal/65 sm:text-sm">
                 {s.label.map((part, i) => (
                   <Fragment key={part}>
