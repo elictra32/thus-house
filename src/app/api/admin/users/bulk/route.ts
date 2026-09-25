@@ -14,7 +14,7 @@ export const PUT = adminRoute("members", async (req, { service, email, perms }) 
   if (rows.length > 200) return jsonError("แก้ได้ครั้งละไม่เกิน 200 คน");
 
   const ids = rows.map((r) => r.id);
-  const { data: targets } = await service.from("users").select("id, email, member_code, roles(permissions)").in("id", ids);
+  const { data: targets } = await service.from("users").select("id, email, role, member_code, roles!users_role_fkey(permissions)").in("id", ids);
   const byId = new Map((targets ?? []).map((t) => [t.id, t]));
   const errors: string[] = [];
   const codes = new Map<string, string>(); // code → id (กันซ้ำกันเองในชุดนี้)

@@ -12,7 +12,7 @@ type P = { id: string };
 // บัญชีที่มีสิทธิ์จัดการ Role (Head Admin / เจ้าของระบบ) — คนที่ไม่มีสิทธิ์ roles แก้หรือลบไม่ได้
 async function guardTarget(service: SupabaseClient, id: string, perms: Set<Permission>) {
   const [{ data: target }, { data: extra }] = await Promise.all([
-    service.from("users").select("email, roles(permissions)").eq("id", id).maybeSingle(),
+    service.from("users").select("email, role, roles!users_role_fkey(permissions)").eq("id", id).maybeSingle(),
     service.from("user_roles").select("roles(permissions)").eq("user_id", id),
   ]);
   if (!target) return { target: null, error: null };
@@ -25,7 +25,7 @@ async function guardTarget(service: SupabaseClient, id: string, perms: Set<Permi
 
 export const GET = adminRoute<P>("members", async (_req, { service }, { id }) => {
   const [user, purchases, watched, videoLogs, extraRoles, notes, memberLogs, mentors] = await Promise.all([
-    service.from("users").select("*, roles(name)").eq("id", id).maybeSingle(),
+    service.from("users").select("*, roles!users_role_fkey(name)").eq("id", id).maybeSingle(),
     service.from("purchases").select("*, classes(id, name, videos_count)").eq("user_id", id).order("created_at", { ascending: false }),
     service.from("watched_videos").select("video_id, videos(class_id)").eq("user_id", id),
     // ประวัติเปิดบทเรียน 100 ครั้งล่าสุด (บันทึกโดย /api/videos/[id]/source)
