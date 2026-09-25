@@ -32,6 +32,7 @@ export default async function ProfilePage() {
         phone={profile?.phone ?? ""}
         email={user.email ?? ""}
         memberCode={profile?.member_code ?? ""}
+        avatar={profile?.avatar_url ?? ""}
       />
 
       <section className="card overflow-hidden">

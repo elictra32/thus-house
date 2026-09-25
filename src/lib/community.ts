@@ -22,3 +22,9 @@ export async function isCommunityStaff(user: AuthUser) {
 export function displayName(u: { nickname?: string | null; name?: string | null; email?: string | null } | null) {
   return u?.nickname || u?.name || u?.email?.split("@")[0] || "สมาชิก";
 }
+
+// ชื่อที่แสดงใต้คลิป: รหัสสมาชิก + ชื่อเล่น (เช่น "THUS-001 บอส")
+export type Person = { nickname?: string | null; name?: string | null; email?: string | null; member_code?: string | null; avatar_url?: string | null };
+export function publicPerson(u: Person | null) {
+  return { code: u?.member_code || null, name: displayName(u), avatar: u?.avatar_url || null };
+}

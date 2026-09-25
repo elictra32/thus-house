@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createServerSupabase, createServiceSupabase } from "@/lib/supabase-server";
+import { cookies } from "next/headers";
 import { jsonError } from "@/lib/auth";
+import { DEVICE_BUSY, SID_COOKIE, SID_COOKIE_OPTIONS } from "@/lib/device-session";
 
 const NOT_CONFIRMED = "บัญชียังไม่ได้ยืนยันอีเมล — กดลิงก์ยืนยันในอีเมล หรือรอทีมงานยืนยันบัญชีให้";
 
@@ -27,6 +29,14 @@ export async function POST(req: Request) {
     return jsonError("บัญชีนี้ถูกระงับ กรุณาติดต่อทีมงาน", 403);
   }
 
+  // สมาชิกล็อกอินได้ทีละเครื่อง — ออกเฉพาะ session นี้ (scope local) ไม่ให้เครื่องเดิมหลุด
+  const sid = cookies().get(SID_COOKIE)?.value || crypto.randomUUID();
+  const { data: device } = await supabase.rpc("session_check", { sid });
+  if (device === "busy") {
+    await supabase.auth.signOut({ scope: "local" });
+    return jsonError(DEVICE_BUSY, 409);
+  }
+
   const now = new Date().toISOString();
   const { data: updated } = await service.from("users").update({ last_login_at: now }).eq("id", data.user.id).select("id");
   if (!updated?.length) {
@@ -39,5 +49,7 @@ export async function POST(req: Request) {
     });
   }
 
-  return NextResponse.json({ ok: true });
+  const res = NextResponse.json({ ok: true });
+  res.cookies.set(SID_COOKIE, sid, SID_COOKIE_OPTIONS);
+  return res;
 }

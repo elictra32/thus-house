@@ -72,6 +72,11 @@ export const PUT = adminRoute<P>("members", async (req, { service, email, user: 
     }
     update.discord_id = discordId;
   }
+  // ปลดล็อกอุปกรณ์: เครื่องเดิมถูกออกจากระบบเมื่อเปิดหน้าถัดไป → ล็อกอินเครื่องใหม่ได้ทันที
+  if (body.unlock_device === true) {
+    update.active_session = null;
+    update.active_session_seen = null;
+  }
   if ("membership_end" in body) update.membership_end = str(body, "membership_end");
   if ("role" in body) {
     if (!perms.has("roles")) return jsonError("ไม่มีสิทธิ์เปลี่ยน Role", 403);

@@ -33,7 +33,7 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
   const [deleting, setDeleting] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  async function update(body: Record<string, string>) {
+  async function update(body: Record<string, string | boolean>) {
     setSaving(true);
     setActionError("");
     try {
@@ -112,6 +112,20 @@ export default function MemberDetail({ params }: { params: { id: string } }) {
           <Row label="สมัครเมื่อ" value={formatDate(user.created_at)} />
           <Row label="เริ่มเป็นสมาชิก" value={formatDate(user.membership_start)} />
           <Row label="เข้าสู่ระบบล่าสุด" value={formatDate(user.last_login_at, true)} />
+          <div>
+            <p className="text-xs text-muted">อุปกรณ์ที่ล็อกอิน (ใช้ได้ทีละ 1 เครื่อง)</p>
+            {user.active_session ? (
+              <div className="mt-1 space-y-2">
+                <p>ใช้งานอยู่ · ล่าสุด {formatDate(user.active_session_seen, true)}</p>
+                <Button size="sm" variant="ghost" loading={saving} onClick={() => update({ unlock_device: true })}>
+                  ปลดล็อกอุปกรณ์
+                </Button>
+                <p className="text-xs text-subtle">กดเมื่อสมาชิกทำเครื่องเดิมหาย / ลืมออกจากระบบ — เครื่องเดิมจะถูกออกจากระบบ</p>
+              </div>
+            ) : (
+              <p className="text-subtle">ไม่มี</p>
+            )}
+          </div>
           <div className="border-t border-line pt-4">
             <p className="mb-2 flex items-center gap-2 text-xs text-muted">สถานะ <StatusBadge status={user.status} /></p>
             <Select name="status" value={user.status} disabled={saving} onChange={(e) => update({ status: e.target.value })}>

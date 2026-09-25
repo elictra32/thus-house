@@ -14,6 +14,9 @@ export interface User {
   membership_start: string | null;
   membership_end: string | null;
   last_login_at: string | null;
+  avatar_url: string | null; // รูปโปรไฟล์ (bucket avatars)
+  active_session: string | null; // รหัสเครื่องที่ล็อกอินอยู่ (ล็อกอินได้ทีละเครื่อง)
+  active_session_seen: string | null;
   role: string; // id ใน roles
   created_at: string;
 }

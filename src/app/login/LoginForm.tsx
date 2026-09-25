@@ -8,7 +8,9 @@ import { api } from "@/lib/api-client";
 
 export default function LoginForm() {
   const router = useRouter();
-  const next = useSearchParams().get("next");
+  const params = useSearchParams();
+  const next = params.get("next");
+  const kicked = params.get("kicked") === "1";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -34,6 +36,11 @@ export default function LoginForm() {
     <form onSubmit={onSubmit} className="space-y-4" noValidate>
       <Input label="อีเมล" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <Input label="รหัสผ่าน" name="password" type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} />
+      {kicked && !error && (
+        <p className="rounded-lg bg-amber-500/15 p-3 text-sm text-amber-200">
+          บัญชีนี้ถูกใช้งานที่อุปกรณ์อื่นแล้ว — 1 บัญชีใช้ได้ทีละ 1 อุปกรณ์
+        </p>
+      )}
       {error && <p className="rounded-lg bg-danger/15 p-3 text-sm text-red-300">{error}</p>}
       <Button type="submit" loading={loading} className="w-full">
         เข้าสู่ระบบ
