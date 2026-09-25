@@ -74,7 +74,7 @@ export default async function Dashboard() {
             ยังไม่มีคอร์สที่ลงทะเบียน — เลือกคอร์สด้านล่างเพื่อเริ่มเรียน
           </div>
         ) : (
-          <div className="grid gap-[18px] md:grid-cols-3">
+          <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {mine.map((c, i) => (
               <ClassCard
                 key={c.id}
@@ -125,7 +125,7 @@ export default async function Dashboard() {
       {available.length > 0 && (
         <section>
           <h2 className="mb-5 text-2xl font-bold">Available Classes</h2>
-          <div className="grid gap-[18px] md:grid-cols-3">
+          <div className="grid gap-[18px] sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {available.map((c, i) => (
               <ClassCard
                 key={c.id}

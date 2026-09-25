@@ -21,7 +21,7 @@ export default function ClassCard({ cls, index = 0, href, progress, action }: Pr
     <article className="card flex flex-col overflow-hidden transition hover:-translate-y-1 hover:ring-white/[0.14]">
       <Link
         href={href}
-        className={`flex h-[165px] items-end bg-gradient-to-br p-[18px] ${gradients[index % gradients.length]}`}
+        className={`flex aspect-[16/9] items-end bg-gradient-to-br p-[18px] ${gradients[index % gradients.length]}`}
         style={cls.thumbnail_url ? { backgroundImage: `linear-gradient(to top, #140e19cc, transparent), url(${cls.thumbnail_url})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
       >
         <span className="rounded-[7px] border border-white/10 bg-white/[.08] px-2.5 py-1.5 text-[11px] uppercase">

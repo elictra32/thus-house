@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import PageHeader, { ErrorBox } from "@/components/admin/PageHeader";
 import Button from "@/components/Button";
@@ -8,7 +8,7 @@ import Modal, { ConfirmModal } from "@/components/Modal";
 import { PageLoading } from "@/components/LoadingSpinner";
 import { api } from "@/lib/api-client";
 import { useApi } from "@/lib/use-api";
-import { cn, formatDuration } from "@/lib/utils";
+import { cn, formatDuration, youtubeId } from "@/lib/utils";
 import type { Class, Video } from "@/types/database";
 
 type Form = { title: string; description: string; video_url: string; minutes: string; seconds: string };
@@ -28,9 +28,44 @@ export default function VideosAdmin({ params }: { params: { id: string } }) {
 
   const videos = data?.videos ?? [];
 
+  // วางลิงก์ YouTube → ดึงชื่อ / คำอธิบาย / ความยาวมาเติมให้ (ไม่ทับช่องที่พิมพ์เองแล้ว) แก้ต่อได้
+  const [ytState, setYtState] = useState<"" | "loading" | "ok" | "error">("");
+  const [ytMsg, setYtMsg] = useState("");
+  const lastFetched = useRef("");
+  useEffect(() => {
+    const id = youtubeId(form.video_url);
+    if (!editing || !id || lastFetched.current === id) return;
+    const t = setTimeout(async () => {
+      lastFetched.current = id;
+      setYtState("loading");
+      try {
+        const info = await api.get<{ title: string; description: string; durationSeconds: number | null }>(
+          `/api/admin/youtube-info?url=${encodeURIComponent(form.video_url)}`,
+        );
+        setForm((f) => ({
+          ...f,
+          title: f.title.trim() ? f.title : info.title,
+          description: f.description.trim() ? f.description : info.description,
+          ...(info.durationSeconds && !Number(f.minutes) && !Number(f.seconds)
+            ? { minutes: String(Math.floor(info.durationSeconds / 60)), seconds: String(info.durationSeconds % 60) }
+            : {}),
+        }));
+        setYtState("ok");
+        setYtMsg(info.durationSeconds ? "" : " (ไม่ได้ความยาวคลิป — กรอกเองได้)");
+      } catch (err) {
+        setYtState("error");
+        setYtMsg((err as Error).message);
+      }
+    }, 500);
+    return () => clearTimeout(t);
+  }, [form.video_url, editing]);
+
   function open(v: Video | "new") {
     setEditing(v);
     setFormError("");
+    setYtState("");
+    // แก้คลิปเดิม: ไม่ดึงซ้ำจนกว่าจะเปลี่ยนลิงก์
+    lastFetched.current = v === "new" ? "" : youtubeId(v.video_url) ?? "";
     setForm(
       v === "new"
         ? empty
@@ -148,15 +183,20 @@ export default function VideosAdmin({ params }: { params: { id: string } }) {
 
       <Modal open={!!editing} onClose={() => setEditing(null)} title={editing === "new" ? "เพิ่มวิดีโอ" : "แก้ไขวิดีโอ"}>
         <form onSubmit={save} className="space-y-4">
+          <div>
+            <Input
+              label="ลิงก์วิดีโอ (YouTube หรือ Google Drive) *"
+              name="video_url"
+              placeholder="https://youtu.be/... หรือ https://drive.google.com/file/d/.../view"
+              value={form.video_url}
+              onChange={set("video_url")}
+            />
+            {ytState === "loading" && <p className="mt-1.5 text-xs text-muted">⏳ กำลังดึงชื่อ / คำอธิบาย / ความยาวจาก YouTube...</p>}
+            {ytState === "ok" && <p className="mt-1.5 text-xs text-green-300">✓ ดึงข้อมูลจาก YouTube แล้ว — ตรวจแล้วแก้ได้{ytMsg}</p>}
+            {ytState === "error" && <p className="mt-1.5 text-xs text-amber-300">{ytMsg}</p>}
+          </div>
           <Input label="ชื่อบทเรียน *" name="title" value={form.title} onChange={set("title")} />
           <Textarea label="คำอธิบาย" name="description" rows={3} value={form.description} onChange={set("description")} />
-          <Input
-            label="ลิงก์วิดีโอ (YouTube หรือ Google Drive) *"
-            name="video_url"
-            placeholder="https://youtu.be/... หรือ https://drive.google.com/file/d/.../view"
-            value={form.video_url}
-            onChange={set("video_url")}
-          />
           <div className="grid grid-cols-2 gap-3">
             <Input label="ความยาว (นาที)" name="minutes" type="number" min={0} value={form.minutes} onChange={set("minutes")} />
             <Input label="วินาที" name="seconds" type="number" min={0} max={59} value={form.seconds} onChange={set("seconds")} />
