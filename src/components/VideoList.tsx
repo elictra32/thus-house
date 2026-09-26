@@ -14,7 +14,7 @@ export default function VideoList({
   onSelect: (id: string) => void;
 }) {
   return (
-    <ol className="max-h-[60vh] overflow-y-auto">
+    <ol className="max-h-[45vh] overflow-y-auto lg:max-h-[60vh]">
       {videos.map((v, i) => {
         const active = v.id === currentId;
         const done = watched.has(v.id);

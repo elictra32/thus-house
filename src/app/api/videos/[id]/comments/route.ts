@@ -5,10 +5,10 @@ import { displayName, isCommunityStaff, publicPerson, videoAccess } from "@/lib/
 import { notifyDiscord } from "@/lib/discord";
 import { logMember } from "@/lib/member-log";
 
-type Row = { id: string; parent_id: string | null; body: string; created_at: string; user_id: string };
+type Row = { id: string; parent_id: string | null; body: string; created_at: string; user_id: string; video_id: string };
 type Author = { id: string; nickname: string | null; name: string | null; email: string; role: string; member_code: string | null; avatar_url: string | null };
 
-// รายการคอมเมนต์ของบทเรียน + จำนวนไลก์ (เฉพาะผู้มีสิทธิ์เรียนคอร์สนี้)
+// คอมเมนต์ของ "ทุกคลิปในคลาสเดียวกัน" (บอกว่ามาจากคลิปไหน) + หัวใจของคลิปนี้ (เฉพาะผู้มีสิทธิ์เรียนคอร์สนี้)
 export async function GET(_req: Request, { params }: { params: { id: string } }) {
   const auth = await requireApiUser();
   if (!auth.ok) return auth.res;
@@ -16,13 +16,15 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   if (!video) return jsonError("ไม่พบวิดีโอ", 404);
   if (!ok) return jsonError("ไม่มีสิทธิ์เข้าถึงคอร์สนี้", 403);
 
+  const { data: classVideos } = await service.from("videos").select("id, title, order_index").eq("class_id", video.class_id).order("order_index");
+  const lessons = new Map((classVideos ?? []).map((v, i) => [v.id, { no: i + 1, title: v.title as string }]));
   const [{ data: rows, error: rowsError }, { data: vlikes }, { data: roles }] = await Promise.all([
     service
       .from("lesson_comments")
-      .select("id, parent_id, body, created_at, user_id")
-      .eq("video_id", video.id)
+      .select("id, parent_id, body, created_at, user_id, video_id")
+      .in("video_id", Array.from(lessons.keys()))
       .order("created_at", { ascending: true })
-      .limit(500),
+      .limit(1000),
     service.from("video_likes").select("user_id, created_at").eq("video_id", video.id).order("created_at", { ascending: false }),
     service.from("roles").select("id, permissions"),
   ]);
@@ -62,6 +64,9 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
       return {
         id: c.id,
         parentId: c.parent_id,
+        videoId: c.video_id,
+        lessonNo: lessons.get(c.video_id)?.no ?? null,
+        lessonTitle: lessons.get(c.video_id)?.title ?? "",
         body: c.body,
         createdAt: c.created_at,
         author: who.name,
@@ -90,14 +95,20 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   if (text.length > 2000) return jsonError("ข้อความยาวเกิน 2,000 ตัวอักษร");
 
   // ตอบกลับได้ชั้นเดียว: ตอบคอมเมนต์ที่เป็นคำตอบอยู่แล้ว → ผูกกับคอมเมนต์หลักแทน
+  // คอมเมนต์แสดงรวมทั้งคลาส → ตอบคอมเมนต์ของคลิปอื่นในคลาสเดียวกันได้ · คำตอบผูกกับคลิปของกระทู้นั้น
   let parentId: string | null = null;
   let parentOwner: string | null = null;
+  let target = video;
   if (typeof body.parentId === "string" && body.parentId) {
     const { data: parent } = await service
       .from("lesson_comments").select("id, parent_id, user_id, video_id").eq("id", body.parentId).maybeSingle();
-    if (!parent || parent.video_id !== video.id) return jsonError("ไม่พบคอมเมนต์ที่ต้องการตอบ", 404);
+    const { data: parentVideo } = parent
+      ? await service.from("videos").select("id, class_id, title").eq("id", parent.video_id).maybeSingle()
+      : { data: null };
+    if (!parent || !parentVideo || parentVideo.class_id !== video.class_id) return jsonError("ไม่พบคอมเมนต์ที่ต้องการตอบ", 404);
     parentId = parent.parent_id ?? parent.id;
     parentOwner = parent.user_id;
+    target = parentVideo;
   }
 
   // กันสแปม: ไม่เกิน 10 คอมเมนต์ต่อ 10 นาที
@@ -108,11 +119,11 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
   const { data: row, error } = await service
     .from("lesson_comments")
-    .insert({ video_id: video.id, user_id: auth.user.id, parent_id: parentId, body: text })
+    .insert({ video_id: target.id, user_id: auth.user.id, parent_id: parentId, body: text })
     .select("id")
     .single();
   if (error) return jsonError(error.message, 500);
-  await logMember(service, auth.user.id, "comment", { lesson: video.title, body: text.slice(0, 200), reply: !!parentId });
+  await logMember(service, auth.user.id, "comment", { lesson: target.title, body: text.slice(0, 200), reply: !!parentId });
 
   const { data: me } = await service.from("users").select("nickname, name, email, member_code").eq("id", auth.user.id).maybeSingle();
   const who = [me?.member_code, displayName(me)].filter(Boolean).join(" ");
@@ -125,14 +136,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     const targets = new Set((thread ?? []).map((t) => t.user_id));
     if (parentOwner) targets.add(parentOwner);
     targets.delete(auth.user.id);
-    const link = `/classes/${video.class_id}?v=${video.id}#comment-${row.id}`;
+    const link = `/classes/${target.class_id}?v=${target.id}#comment-${row.id}`;
     if (targets.size) {
       await service.from("notifications").insert(
         Array.from(targets).map((uid) => ({
           user_id: uid,
           type: "comment",
           title: uid === parentOwner ? `${who} ตอบคอมเมนต์ของคุณ` : `${who} ตอบในกระทู้ที่คุณร่วมคุย`,
-          message: `บทเรียน "${video.title}": ${text.slice(0, 200)}`,
+          message: `บทเรียน "${target.title}": ${text.slice(0, 200)}`,
           link,
         })),
       );
@@ -141,8 +152,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   await notifyDiscord(
     "comment",
     parentId ? "มีคนตอบคอมเมนต์ใต้คลิป" : "คอมเมนต์ใหม่ใต้คลิป",
-    { จาก: `${who} (${me?.email ?? "-"})`, คอร์ส: cls?.name, บทเรียน: video.title, ข้อความ: text },
-    `/classes/${video.class_id}?v=${video.id}`,
+    { จาก: `${who} (${me?.email ?? "-"})`, คอร์ส: cls?.name, บทเรียน: target.title, ข้อความ: text },
+    `/classes/${target.class_id}?v=${target.id}`,
   );
   return NextResponse.json({ id: row.id });
 }

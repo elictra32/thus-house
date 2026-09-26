@@ -15,7 +15,7 @@ export default async function Navbar({ light = false }: { light?: boolean }) {
 
   const links = user
     ? [
-        { href: "/dashboard", label: "Dashboard" },
+        { href: "/dashboard", label: "คลาส" },
         { href: "/messages", label: "ถามผู้สอน" },
         { href: "/payment", label: "ชำระเงิน" },
         { href: "/profile", label: "โปรไฟล์" },
