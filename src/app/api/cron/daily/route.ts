@@ -6,11 +6,12 @@ import { VERCEL_PLANS, nextRenewal, renewsTomorrow, supabasePlan, vercelPlan } f
 const VERCEL_PLANS_PRO = VERCEL_PLANS.pro;
 import { formatDate } from "@/lib/utils";
 import { runBackup } from "@/lib/backup";
+import { sendDailyReport } from "@/lib/daily-report";
 
 // งานประจำวัน (Vercel Cron ทุกวัน ~09:00 น. — ดู vercel.json)
 // 1) Usage ใกล้เต็ม (80%+) → Discord
 // 2) สิทธิ์สมาชิกเหลือ 30 / 7 / 1 วัน → Discord + แจ้งเตือนสมาชิกในเว็บ
-// 3) สำรองข้อมูลสำคัญส่งเข้าห้อง Discord ส่วนตัว (ดู lib/backup.ts)
+// 3) รายงานประจำวัน (สถิติเมื่อวาน) + สำรองข้อมูลสำคัญ ส่งเข้าห้อง Discord ส่วนตัว (ดู lib/daily-report.ts, lib/backup.ts)
 // ผลพลอยได้: มีคนเรียกฐานข้อมูลทุกวัน → Supabase Free ไม่หยุดโปรเจกต์เพราะไม่มีการใช้งาน
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -109,7 +110,11 @@ export async function GET(req: Request) {
   }
   report.expiring = due.length;
 
-  // ---------- 3) สำรองข้อมูล ----------
+  // ---------- 3) รายงานประจำวัน ----------
+  const daily = await sendDailyReport().catch((e) => ({ ok: false as const, error: String(e) }));
+  report.dailyReport = daily.ok ? "sent" : daily.error;
+
+  // ---------- 4) สำรองข้อมูล ----------
   const backup = await runBackup("cron");
   report.backup = backup.ok ? `${backup.bytes} bytes` : backup.error;
   if (!backup.ok && process.env.DISCORD_BACKUP_WEBHOOK_URL) {

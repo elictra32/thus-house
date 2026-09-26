@@ -2,6 +2,7 @@ import PageHeader from "@/components/admin/PageHeader";
 import { requirePageAdmin } from "@/lib/auth";
 import { BREVO_FREE_PER_DAY, nextRenewal, supabasePlan, vercelPlan } from "@/lib/usage-plans";
 import BackupButton from "./BackupButton";
+import DailyReportButton from "./DailyReportButton";
 import DiscordTestButton from "./DiscordTestButton";
 
 export const metadata = { title: "Usage & ค่าใช้จ่าย" };
@@ -169,11 +170,12 @@ export default async function UsagePage() {
         <h2 className="text-lg font-bold">สำรองข้อมูล</h2>
         <p className="text-muted">
           {process.env.DISCORD_BACKUP_WEBHOOK_URL
-            ? "ระบบส่งไฟล์สำรอง (สมาชิก การชำระเงิน คอร์ส บทเรียน ความคืบหน้า คอมเมนต์ ข้อความ ประวัติ Admin) เข้าห้อง Discord ส่วนตัวทุกวันราว 09:00 น."
+            ? "ระบบส่งไฟล์สำรอง (สมาชิก การชำระเงิน คอร์ส บทเรียน ความคืบหน้า คอมเมนต์ ข้อความ ประวัติ Admin) เข้าห้อง Discord ส่วนตัวทุกวันราว 09:00 น. พร้อมรายงานสถิติของเมื่อวาน (สมาชิก รายได้ การเข้าใช้งาน บทเรียน ชุมชน)"
             : "ยังไม่ได้ตั้งค่า DISCORD_BACKUP_WEBHOOK_URL"}
           {sp.label === "Free" ? " · Supabase Free ไม่มี backup ในตัว ไฟล์ใน Discord คือสำรองหลัก" : " · Supabase Pro มี backup รายวันในตัวอีกชั้น"}
         </p>
         {perms.has("roles") && process.env.DISCORD_BACKUP_WEBHOOK_URL && <BackupButton />}
+        {perms.has("roles") && process.env.DISCORD_BACKUP_WEBHOOK_URL && <div className="mt-3"><DailyReportButton /></div>}
         {perms.has("roles") && process.env.DISCORD_BOT_TOKEN && <div className="mt-3"><DiscordTestButton /></div>}
       </section>
 
