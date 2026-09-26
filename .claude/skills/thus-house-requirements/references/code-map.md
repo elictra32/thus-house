@@ -13,4 +13,5 @@
 | Log สมาชิก | `src/lib/member-log.ts`, `src/lib/member-actions.ts`, `/api/admin/member-logs`, `src/app/admin/logs` |
 | ออนไลน์ & สถิติ | `src/components/PresencePing.tsx`, `/api/presence`, `/api/admin/presence`, `src/app/admin/online`, SQL `presence_ping` / `presence_stats` |
 | Cron / ต่ออายุ Vercel | `/api/cron/daily`, `src/lib/usage-plans.ts` |
+| รายงานประจำวัน | `src/lib/daily-report.ts`, `/api/admin/daily-report`, `admin/usage/DailyReportButton.tsx` |
 | Discord | `src/lib/discord.ts`, `src/lib/discord-bot.ts`, `/api/discord/interactions` |
