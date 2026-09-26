@@ -669,3 +669,19 @@ grant select on public.classes, public.gallery_items to anon;
 grant select, insert, update, delete on public.watched_videos to authenticated;
 grant update (is_read) on public.notifications to authenticated;
 create index if not exists member_notes_author on public.member_notes (author_id);
+
+-- ---------- เอกสารประกอบคลาส (26 ก.ย. 2569) ----------
+-- ลิงก์ Google Drive / Docs / Sheets / Slides ต่อคลาส (เจ้าของเลือกใช้ลิงก์แทนการอัปโหลดไฟล์)
+-- อ่าน/เขียนผ่าน API ฝั่ง server เท่านั้น · สมาชิกเปิดลิงก์ได้เมื่อมีสิทธิ์เรียนคลาสนั้น (API ตรวจสิทธิ์แล้ว redirect)
+create table if not exists public.class_documents (
+  id uuid primary key default gen_random_uuid(),
+  class_id uuid not null references public.classes(id) on delete cascade,
+  title text not null,
+  url text not null,
+  order_index integer not null default 0,
+  created_by text,
+  created_at timestamptz not null default now()
+);
+create index if not exists class_documents_class on public.class_documents (class_id, order_index);
+alter table public.class_documents enable row level security;
+revoke all on public.class_documents from anon, authenticated;

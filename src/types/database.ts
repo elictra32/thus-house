@@ -99,6 +99,20 @@ export interface Video {
 // วิดีโอฝั่งสมาชิก — ไม่มีลิงก์วิดีโอ (ขอลิงก์ทีละบทผ่าน /api/videos/[id]/source)
 export type LessonVideo = Omit<Video, "video_url">;
 
+// เอกสารประกอบคลาส — ลิงก์ Google Drive / Docs / Sheets / Slides
+export interface ClassDocument {
+  id: string;
+  class_id: string;
+  title: string;
+  url: string;
+  order_index: number;
+  created_by: string | null;
+  created_at: string;
+}
+
+// เอกสารฝั่งสมาชิก — ไม่ส่งลิงก์จริงลงหน้าเว็บ (เปิดผ่าน /api/classes/[id]/documents/[docId] ที่ตรวจสิทธิ์ก่อน)
+export type LessonDocument = Pick<ClassDocument, "id" | "title"> & { kind: string };
+
 export interface WatchedVideo {
   id: string;
   user_id: string;

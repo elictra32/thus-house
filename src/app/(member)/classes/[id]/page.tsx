@@ -4,7 +4,10 @@ import { requirePageUser } from "@/lib/auth";
 import { getClassAccess } from "@/lib/class-access";
 import { baht, formatDate } from "@/lib/utils";
 import LessonView from "./LessonView";
-import type { Class } from "@/types/database";
+import ClassDocuments from "@/components/ClassDocuments";
+import { createServiceSupabase } from "@/lib/supabase-server";
+import { docKind } from "@/lib/class-docs";
+import type { Class, LessonDocument } from "@/types/database";
 
 export default async function ClassPage({ params, searchParams }: { params: { id: string }; searchParams: { v?: string } }) {
   const { supabase, user } = await requirePageUser();
@@ -18,6 +21,13 @@ export default async function ClassPage({ params, searchParams }: { params: { id
       .from("watched_videos").select("video_id").eq("user_id", user.id)
       .in("video_id", access.videos.map((v) => v.id));
     watched = (data ?? []).map((w) => w.video_id);
+  }
+  // เอกสารประกอบคลาส: เฉพาะคนที่มีสิทธิ์เรียน · ส่งแค่ชื่อ + ชนิด (ลิงก์จริงอยู่หลัง API ที่ตรวจสิทธิ์)
+  let docs: LessonDocument[] = [];
+  if (access.hasAccess) {
+    const { data } = await createServiceSupabase()
+      .from("class_documents").select("id, title, url").eq("class_id", cls.id).order("order_index");
+    docs = (data ?? []).map((d) => ({ id: d.id, title: d.title, kind: docKind(d.url) }));
   }
 
   return (
@@ -36,6 +46,8 @@ export default async function ClassPage({ params, searchParams }: { params: { id
           </div>
         </div>
       </div>
+
+      {access.hasAccess && <ClassDocuments classId={cls.id} docs={docs} />}
 
       {access.hasAccess ? (
         access.videos.length ? (
