@@ -6,7 +6,7 @@ import { requirePageUser } from "@/lib/auth";
 import { formatDate, isActivePurchase } from "@/lib/utils";
 import type { Class, LiveClass, Purchase } from "@/types/database";
 
-export const metadata = { title: "Dashboard" };
+export const metadata = { title: "คลาส" };
 
 export default async function Dashboard() {
   const { supabase, user, profile } = await requirePageUser();

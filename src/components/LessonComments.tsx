@@ -7,6 +7,9 @@ import Modal from "@/components/Modal";
 type Comment = {
   id: string;
   parentId: string | null;
+  videoId: string;
+  lessonNo: number | null;
+  lessonTitle: string;
   body: string;
   createdAt: string;
   author: string;
@@ -48,8 +51,9 @@ function Heart({ filled }: { filled: boolean }) {
   );
 }
 
-// ไลก์บทเรียน + คอมเมนต์ใต้คลิป (ตอบกลับได้ 1 ชั้น) — ทีมงานตอบ/ลบได้ สมาชิกลบของตัวเองได้
-export default function LessonComments({ videoId }: { videoId: string }) {
+// ไลก์บทเรียน + คอมเมนต์ (ตอบกลับได้ 1 ชั้น) — ทีมงานตอบ/ลบได้ สมาชิกลบของตัวเองได้
+// คอมเมนต์แสดงรวมทุกคลิปในคลาสเดียวกัน พร้อมบอกว่ามาจากคลิปไหน (กดเพื่อไปคลิปนั้น)
+export default function LessonComments({ videoId, onOpenLesson }: { videoId: string; onOpenLesson?: (videoId: string) => void }) {
   const [data, setData] = useState<Data | null>(null);
   const [error, setError] = useState("");
   const [text, setText] = useState("");
@@ -130,6 +134,18 @@ export default function LessonComments({ videoId }: { videoId: string }) {
           <span className="font-bold"><Name code={c.code} name={c.author} /></span>
           {c.staff && <span className="rounded-full bg-[#ba94c7]/20 px-2 py-0.5 text-[11px] font-bold text-[#d9c2e3]">ทีมงาน</span>}
           <span className="text-xs text-subtle">{timeAgo(c.createdAt)}</span>
+          {!reply && (c.videoId === videoId ? (
+            <span className="text-xs text-subtle">(คลิปนี้)</span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => onOpenLesson?.(c.videoId)}
+              className="max-w-full truncate text-left text-xs text-brand-light hover:underline"
+              title={c.lessonTitle}
+            >
+              (จากคลิป บทที่ {c.lessonNo} · {c.lessonTitle})
+            </button>
+          ))}
         </div>
         <p className="mt-1 whitespace-pre-wrap break-words text-sm leading-relaxed text-ink/90">{c.body}</p>
         <div className="mt-1.5 flex items-center gap-4 text-xs text-muted">
@@ -150,10 +166,11 @@ export default function LessonComments({ videoId }: { videoId: string }) {
   );
 
   return (
-    <section className="card mt-6 p-5 md:p-6">
+    <section className="card p-5 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="text-lg font-bold">
           คอมเมนต์ {data ? <span className="text-muted">· {data.comments.length}</span> : null}
+          <span className="mt-0.5 block text-xs font-normal text-subtle">รวมทุกคลิปในคลาสนี้</span>
         </h3>
         <button
           onClick={likeVideo}
