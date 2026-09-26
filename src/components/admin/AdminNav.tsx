@@ -16,6 +16,7 @@ const items: { href: string; label: string; icon: string; perm?: Permission }[] 
   { href: "/admin/messages", label: "ข้อความถึงผู้สอน", icon: "💬", perm: "community" },
   { href: "/admin/email", label: "ส่งอีเมล", icon: "✉", perm: "email" },
   { href: "/admin/gallery", label: "รูปหน้าเว็บ", icon: "▣", perm: "content" },
+  { href: "/admin/online", label: "ออนไลน์ & สถิติ", icon: "🟢", perm: "dashboard" },
   { href: "/admin/analytics", label: "Analytics", icon: "↗", perm: "dashboard" },
   { href: "/admin/usage", label: "Usage & ค่าใช้จ่าย", icon: "◔", perm: "dashboard" },
   { href: "/admin/logs", label: "Log สมาชิก / Admin", icon: "≡", perm: "logs" },

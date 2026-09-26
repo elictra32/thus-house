@@ -91,6 +91,7 @@ export interface Video {
   description: string | null;
   video_url: string;
   duration_seconds: number;
+  thumbnail_url: string | null; // ภาพปกคลิป YouTube (ตั้งอัตโนมัติจากลิงก์)
   order_index: number;
   created_at: string;
 }

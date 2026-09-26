@@ -20,6 +20,23 @@ export default function ClassesAdmin() {
   const [form, setForm] = useState<Form>(empty);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [fromClip, setFromClip] = useState(false);
+  const [clipMsg, setClipMsg] = useState("");
+
+  // รูปปกคลาส = ภาพปกของคลิป YouTube คลิปแรก
+  async function pickFirstClip() {
+    if (!editing || editing === "new") return;
+    setFromClip(true);
+    setClipMsg("");
+    try {
+      const { videos } = await api.get<{ videos: { thumbnail_url: string | null }[] }>(`/api/admin/videos?classId=${editing.id}`);
+      const thumb = videos.find((v) => v.thumbnail_url)?.thumbnail_url;
+      if (thumb) setForm((f) => ({ ...f, thumbnail_url: thumb }));
+      else setClipMsg("ยังไม่มีคลิป YouTube ในคลาสนี้");
+    } finally {
+      setFromClip(false);
+    }
+  }
   const [formError, setFormError] = useState("");
   const [toDelete, setToDelete] = useState<Class | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -153,7 +170,13 @@ export default function ClassesAdmin() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={form.thumbnail_url} alt="" className="mb-2 h-28 w-full rounded-lg object-cover" />
             )}
-            <input id="thumb" type="file" accept="image/png,image/jpeg,image/webp" onChange={upload} className="text-sm text-muted" />
+            <div className="flex flex-wrap items-center gap-3">
+              <input id="thumb" type="file" accept="image/png,image/jpeg,image/webp" onChange={upload} className="text-sm text-muted" />
+              {editing && editing !== "new" && (
+                <Button type="button" size="sm" variant="ghost" loading={fromClip} onClick={pickFirstClip}>🎬 ใช้ภาพจากคลิปแรก</Button>
+              )}
+            </div>
+            {clipMsg && <p className="mt-1 text-xs text-amber-300">{clipMsg}</p>}
             {uploading && <p className="mt-1 text-xs text-muted">กำลังอัปโหลด...</p>}
           </div>
           <p className="text-xs text-subtle">จำนวนวิดีโอและชั่วโมงคำนวณอัตโนมัติจากวิดีโอในคอร์ส</p>
