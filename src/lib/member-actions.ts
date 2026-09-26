@@ -4,6 +4,7 @@ export const MEMBER_ACTIONS: Record<string, string> = {
   logout: "ออกจากระบบ",
   signup: "สมัครสมาชิก",
   open_lesson: "เปิดบทเรียน",
+  open_doc: "เปิดเอกสารประกอบคลาส",
   comment: "คอมเมนต์",
   delete_comment: "ลบคอมเมนต์",
   like_lesson: "กดหัวใจบทเรียน",
@@ -22,6 +23,7 @@ export function describeLog(action: string, d: Record<string, unknown> | null) {
   const s = (k: string) => (typeof d[k] === "string" ? (d[k] as string) : "");
   switch (action) {
     case "open_lesson": return s("title");
+    case "open_doc": return s("title");
     case "comment": return `${s("lesson")}: ${s("body")}`;
     case "delete_comment": return s("body");
     case "like_lesson": return s("lesson");

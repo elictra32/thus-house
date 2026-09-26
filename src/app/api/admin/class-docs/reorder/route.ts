@@ -1,0 +1,19 @@
+import { adminRoute, ok, readJson } from "@/lib/admin-route";
+import { jsonError, logAdmin } from "@/lib/auth";
+
+// body: { classId, ids: [docId ตามลำดับใหม่] }
+export const PUT = adminRoute("classes", async (req, { service, email }) => {
+  const { classId, ids } = await readJson(req);
+  if (typeof classId !== "string" || !Array.isArray(ids) || !ids.every((i) => typeof i === "string")) {
+    return jsonError("ข้อมูลไม่ถูกต้อง");
+  }
+  const results = await Promise.all(
+    (ids as string[]).map((id, index) =>
+      service.from("class_documents").update({ order_index: index }).eq("id", id).eq("class_id", classId),
+    ),
+  );
+  const failed = results.find((r) => r.error);
+  if (failed?.error) return jsonError(failed.error.message, 500);
+  await logAdmin(service, email, "reorder", "class_documents", classId, { ids });
+  return ok();
+});

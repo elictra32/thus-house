@@ -139,6 +139,7 @@ export default function ClassesAdmin() {
                   <td className="td">
                     <div className="flex justify-end gap-2">
                       <Link href={`/admin/classes/${c.id}/videos`} className="rounded-lg bg-brand/15 px-3 py-1.5 text-xs font-bold text-brand-light">วิดีโอ</Link>
+                      <Link href={`/admin/classes/${c.id}/documents`} className="rounded-lg bg-brand/15 px-3 py-1.5 text-xs font-bold text-brand-light">เอกสาร</Link>
                       <Button size="sm" variant="ghost" onClick={() => open(c)}>แก้ไข</Button>
                       <Button size="sm" variant="ghost" onClick={() => setToDelete(c)}>ลบ</Button>
                     </div>
