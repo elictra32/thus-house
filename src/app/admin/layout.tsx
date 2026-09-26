@@ -17,14 +17,17 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     {view && <ViewAsBanner view={view} />}
     <div className="min-h-screen lg:grid lg:grid-cols-[240px_1fr]">
       <div className="border-b border-line bg-panel lg:border-b-0 lg:border-r">
-        <aside className="relative lg:sticky lg:top-0 lg:h-screen">
+        <aside className="relative lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col">
           <div className="p-5">
             <Logo href="/admin" />
             <p className="mt-1 text-xs font-bold tracking-[2px] text-brand-light">ADMIN</p>
           </div>
           {head && <ViewAsSwitcher current={view ?? ""} />}
-          <AdminNav permissions={[...perms]} />
-          <div className="hidden p-5 text-xs text-subtle lg:absolute lg:bottom-0 lg:block">
+          {/* จอเตี้ย: เมนูเลื่อนได้ในตัว อีเมล/ออกจากระบบอยู่ใต้เมนูเสมอ ไม่ทับกัน */}
+          <div className="lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
+            <AdminNav permissions={[...perms]} />
+          </div>
+          <div className="hidden shrink-0 p-5 text-xs text-subtle lg:block">
             <p className="mb-3 truncate">{user.email}</p>
             <LogoutButton />
           </div>

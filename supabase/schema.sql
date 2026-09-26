@@ -646,6 +646,20 @@ revoke all on function public.presence_stats(timestamptz) from public, anon, aut
 grant execute on function public.presence_ping(uuid) to service_role;
 grant execute on function public.presence_stats(timestamptz) to service_role;
 
+-- ---------- คอลัมน์ที่มีในฐานข้อมูลจริงแต่ไฟล์นี้ยังไม่มี (เทียบกับ production 26 ก.ย. 2569) ----------
+-- avatar_url: รูปโปรไฟล์ (ใช้ในคอมเมนต์ / Mentor / ออนไลน์) — ขาดแล้วชื่อในคอมเมนต์จะกลายเป็น "สมาชิก"
+alter table public.users add column if not exists avatar_url text;
+alter table public.users add column if not exists updated_at timestamptz default now();
+-- membership_start_date / membership_end_date: คอลัมน์รุ่นแรก ไม่ได้ใช้ในโค้ดแล้ว (ใช้ membership_start / membership_end แทน)
+alter table public.users add column if not exists membership_start_date timestamptz default now();
+alter table public.users add column if not exists membership_end_date timestamptz;
+alter table public.classes add column if not exists updated_at timestamptz default now();
+alter table public.purchases add column if not exists updated_at timestamptz default now();
+alter table public.live_classes add column if not exists description text;
+alter table public.live_classes add column if not exists duration_minutes integer;
+alter table public.live_classes add column if not exists updated_at timestamptz default now();
+alter table public.watched_videos add column if not exists watched_at timestamptz default now();
+
 -- ---------- ปิดสิทธิ์ตารางให้แคบสุด (ตรวจความปลอดภัย 25 ก.ย. 2569) ----------
 -- เว็บเขียนข้อมูลผ่าน API ฝั่ง server (service role) เป็นหลัก · anon อ่านได้แค่คอร์ส/รูปหน้าแรก
 revoke all on all tables in schema public from anon;
